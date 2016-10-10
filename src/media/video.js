@@ -71,6 +71,7 @@ export class VideoCommand extends MediaCommand {
       video: Object.assign({
         stream: true,
         type: 'video',
+        hls: Boolean(initialState.hls),
         src: src
       }, initialState.manifest)
     }
@@ -153,6 +154,7 @@ export class VideoCommand extends MediaCommand {
 
     this.on('load', () => {
       const needsMipmaps = (
+        source &&
         isPowerOfTwo(source.videoHeight) &&
         isPowerOfTwo(source.videoWidth)
       )
@@ -304,7 +306,7 @@ export class VideoCommand extends MediaCommand {
     this.mute = () => set('muted', true) && emit('mute')
 
     /**
-     * Unutes the video
+     * Unmutes the video
      *
      * @return {VideoCommand}
      */

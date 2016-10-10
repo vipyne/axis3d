@@ -9,6 +9,7 @@ import { EventEmitter } from 'events'
 import { MeshCommand } from './mesh'
 import resl from 'resl'
 import raf from 'raf'
+import Hls from 'hls.js'
 
 /**
  * reload timeout in milliseconds.
@@ -230,6 +231,42 @@ export class MediaCommand extends MeshCommand {
       }, RELOAD_TIMEOUT)
 
       isLoading = true
+
+      console.log(requested.video)
+      console.log(Hls.isSupported())
+      if (Hls.isSupported() && requested.video && requested.video.hls) {
+        let hls = new Hls()
+        hls.loadSource(requested.video.src)
+        let video = document.createElement("video")
+        hls.attachMedia(video)
+        hls.on(Hls.Events.MANIFEST_PARSED, (...args) => {
+          console.log('fooo')
+          video.play()
+ //         raf(() => { video.pause() })
+          void (this.onloaded || noop)(...args)
+          this.emit('load', ...args)
+        })
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          console.log(event, data)
+          let errorType = data.type
+          let errorDetails = data.details
+          let errorFatal = data.fatal
+          hasError = true
+          isDoneLoading = (true === errorFatal ? true : false)
+          hls.destroy()
+          void (this.onerror || noop)(event, data)
+          this.emit('error', event, data)
+        })
+        hls.on(Hls.Events.MANIFEST_LOADING, (...args) => {
+          hasProgress = true
+          isDoneLoading = false
+          void (this.onprogress || noop)(...args)
+          this.emit('progress', ...args)
+        })
+
+        return true
+      }
+
       raf(() => resl({
         manifest: requested,
 

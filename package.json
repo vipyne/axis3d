@@ -34,7 +34,7 @@
     "gl-vec4": "^1.0.1",
     "glsl-fast-gaussian-blur": "^1.0.2",
     "glsl-inject-defines": "^1.0.3",
-    "hls.js": "^0.6.2-5",
+    "hls.js": "^0.6.5",
     "ios-safe-audio-context": "^1.0.1",
     "is-android": "^1.0.1",
     "is-ios": "^1.0.0",

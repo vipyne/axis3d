@@ -20,7 +20,7 @@ const ctx = Context({}, {regl: {attributes: {antialias: true}}})
 // objects
 const camera = Camera(ctx)
 const frame = Frame(ctx)
-const video = Video(ctx, '/paramotor.mp4')
+const video = Video(ctx, '/test.m3u8', {hls: true})
 const plane = Plane(ctx, {map: video})
 
 Object.assign(window, {
