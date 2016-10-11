@@ -11,7 +11,7 @@ import vec3 from 'gl-vec3'
 import raf from 'raf'
 
 const ctx = Context()
-const camera = Camera(ctx, {position: [0, 0, -5]})
+const camera = Camera(ctx, {position: [0, 0, -20]})
 const frame = Frame(ctx)
 
 const centroid = Box(ctx)
