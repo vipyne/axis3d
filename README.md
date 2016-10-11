@@ -40,22 +40,22 @@ import Camera from 'axis3d/camera'
 import Box from 'axis3d/mesh/box'
 import Frame from 'axis3d/frame'
 ```
-Ok, now we need to setup our Context and tools. 
-In axis3d, the Context is a central reference point that keeps everything connected
-and in order, so every object created needs to listen to it. This is easy to do
-because very object class returns a function, so all we have to do is pass the Context
-as the 1st argument to every object we make.
+Now we setup our Context and tools. 
+In axis3d, the Context is a central reference point that keeps all generated objects connected
+and in order, so every object we create needs to listen to it. This is easy
+because every object class returns a function, so we simply pass Context
+as the first argument to every object we create.
 
 First initialize the Context. Beneath the dependencies add:
 ```javascript
 const ctx = Context()
 ```
 
-Now let's create our Camera, Frame, and Box below that:
+Now let's create our Camera, Frame & Box below that:
 ```javascript
 const frame = Frame(ctx)
 const camera = Camera(ctx, {position: [0, 0, -5]})
-const box = Botx(ctx)
+const box = Box(ctx)
 ```
 
 Notice we passed Camera a second object with the key "position". The array it contains ([0, 0, -5])
