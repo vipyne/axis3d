@@ -55,11 +55,11 @@ const camera = Camera(ctx, {position: [0, 0, -5]})
 const box = Box(ctx)
 ```
 
-Notice we passed Camera a second object with the key "position". The array it contains ([0, 0, -5])
+Notice we passed Camera a second argument, an object with the key "position". The array it contains ([0, 0, -5])
 represents the X, Y, and Z coordinates, so this moves the camera back 5 units for a small zoom out.
 Without this, we would have an extreme close up of the cube, instead of seeing the whole thing.
 
-Finally we create the scene by adding this at the bottom:
+Finally, create the scene by adding this at the bottom:
 ```javascript
 frame(() => {
   camera(() => {
@@ -75,9 +75,16 @@ $ make example/example1
 
 Now open a web browser to http://localhost:3000/ and you should see a box!
 
-### If you get a make error:
-Make sure your terminal command has no slash at the end. You should have $ make example/example1 and not
-$ make example/example1/ Also make sure you ran it from inside the axis3d/ repo.
+### If make returns an error:
+Make sure your terminal command has no slash at the end. You should have 
+```javascript
+$ make example/example1 
+```
+and not
+```
+$ make example/example1/
+```
+Also, make sure you run it from inside the axis3d/ repo.
 
 
 Let's look at that last bit of code we added:
