@@ -8,7 +8,6 @@ import Sphere from 'axis3d/mesh/sphere'
 import Frame from 'axis3d/frame'
 import quat from 'gl-quat'
 import vec3 from 'gl-vec3'
-import raf from 'raf'
 
 const ctx = Context()
 const camera = Camera(ctx, {position: [0, 0, -20]})
@@ -37,7 +36,7 @@ for (let i = 0; i < nodesNum; i++) {
 }
 
 frame(({time}) => {
-  //     change rotation, on x & y axis, not z, 
+  //  change rotation, on x & y axis, not z, 
   quat.setAxisAngle(rotation, [1, 1, 0], 0.5*Math.sin(time))
 
   camera(() => {
