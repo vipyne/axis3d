@@ -155,3 +155,38 @@ for (let i = 0; i < nodesNum; i++) {
 ```
 Notice the color array we pass to each node, it's just like the position key/value we pass to the camera.
 
+```javascript
+frame(({time}) => {
+  //  change rotation, on x & y axis, not z, 
+  quat.setAxisAngle(rotation, [1, 1, 0], 0.5*Math.sin(time))
+
+  camera(() => {
+    centroid({color: [0, 1, time % 255, 1,], scale: [0.25, 0.25, 0.25], rotation}, () => {
+      for (let i = 0; i < nodesNum; i++) {
+        const node = nodes[i]
+        const nodeRotation = [0, 0, 0, 1]
+        let position = []
+        const t = time
+        const r = t/2-Math.sin(2*t)/4
+
+        if (0 == i % 2) {
+          position = [i*Math.cos(i), -i*Math.sin(i), i*Math.cos(i)]
+          vec3.rotateX(position, position, centroid.position, r)
+          vec3.rotateY(position, position, centroid.position, r)
+          vec3.rotateZ(position, position, centroid.position, r)
+        } else {
+          position = [-i*Math.cos(i), i*Math.sin(i), -i*Math.cos(i)]
+          vec3.rotateX(position, position, centroid.position, -r)
+          vec3.rotateY(position, position, centroid.position, -r)
+          vec3.rotateZ(position, position, centroid.position, -r)
+        }
+
+        quat.setAxisAngle(nodeRotation, [1, 0, 0], time)
+
+        
+        node({rotation: nodeRotation, position: position})
+      }
+    })
+  })
+})
+```
