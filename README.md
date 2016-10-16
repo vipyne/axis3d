@@ -155,6 +155,15 @@ for (let i = 0; i < nodesNum; i++) {
 ```
 Notice the color array we pass to each node, it's just like the position key/value we pass to the camera.
 
+Next, add these references for simplicity:
+```javascript
+window.camera = camera
+window.centroid = centroid
+```
+
+Finally, we create the secent. This might look like a lot, but it's just 
+a for loop that generates a box or sphere and sets each to move on a certain axis.
+
 ```javascript
 frame(({time}) => {
   //  change rotation, on x & y axis, not z, 
@@ -190,3 +199,8 @@ frame(({time}) => {
   })
 })
 ```
+
+## Render A 360 Photo
+Let's make another example folder called example3 along the other two.
+Add the same index.html file, update the Title number, save it and add an index.js file as well.
+
