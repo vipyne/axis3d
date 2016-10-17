@@ -201,6 +201,65 @@ frame(({time}) => {
 ```
 
 ## Render A 360 Photo
-Let's make another example folder called example3 along the other two.
+Make another example folder called example3 next to the other two.
 Add the same index.html file, update the Title number, save it and add an index.js file as well.
 
+Now let's add the dependencies and set up the camera, frame, and a sphere to put our 360 image on.
+```javascript
+'use strict'
+
+/**
+ * Module dependencies.
+ */
+
+import OrbitCameraController from 'axis3d/controls/orbit-camera'
+import Keyboard from 'axis3d/input/keyboard'
+import Context from 'axis3d/context'
+import Camera from 'axis3d/camera'
+import Sphere from 'axis3d/mesh/sphere'
+import Mouse from 'axis3d/input/mouse'
+import Image from 'axis3d/media/image'
+import Frame from 'axis3d/frame'
+import raf from 'raf'
+
+// axis context
+const ctx = Context()
+
+// objects
+const camera = Camera(ctx)
+const frame = Frame(ctx)
+const image = Image(ctx, './lake360.jpg')
+const sphere = Sphere(ctx, { map: image })
+```
+
+Now let's assign everything to the window object for easy reference:
+```javascript
+Object.assign(window, {camera, frame, image, sphere})
+
+// inputs
+const keyboard = Keyboard(ctx)
+const mouse = Mouse(ctx, {allowWheel: true})
+
+// orbit controller
+const orbitController = OrbitCameraController(ctx, {
+  inputs: {mouse, keyboard},
+  target: camera,
+  invert: true,
+})
+```
+Finally, in a call to raf() (short for Request Animation Frame), we
+set our orbit controller to control from the middle of the sphere.
+
+Add this to the bottom and you should be ready to make the example!
+```javascript
+// axis animation frame loop
+frame(() => {
+  // update controller states
+  orbitController()
+
+  // draw camera scene
+  camera(() => {
+    sphere()
+  })
+})
+```
