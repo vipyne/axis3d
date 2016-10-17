@@ -1,5 +1,6 @@
 ## Introduction
-Axis3d is a multi-media 3d rendering library
+Axis3d is a multi-media 3d rendering library. It can do anything from making intricate shapes to rendering 360 photos and videos. All the 
+code for the following tutorials are in the example folder of this project, along with other examples.
 
 ## Simple Example
 ### Draw a cube
