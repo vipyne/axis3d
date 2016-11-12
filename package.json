@@ -20,6 +20,8 @@
     "audio-context": "^0.1.0",
     "babel-plugin-glslify": "^1.0.2",
     "bound-points": "^1.0.0",
+    "camera-picking-ray": "^1.0.1",
+    "camera-project": "^1.0.2",
     "clamp": "^1.0.1",
     "debug": "^2.2.0",
     "define-properties": "^1.1.2",
@@ -54,10 +56,10 @@
     "primitive-sphere": "^2.0.0",
     "primitive-torus": "^1.0.4",
     "raf": "^3.3.0",
+    "ray-3d": "^1.1.1",
     "regl": "^1.2.1",
     "resl": "^1.0.3",
     "screen-projected-lines": "^1.1.1",
-    "touch-position": "^2.0.0",
     "yields-keycode": "^1.1.0"
   },
   "browserify": {

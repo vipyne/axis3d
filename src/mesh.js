@@ -199,6 +199,7 @@ export class MeshCommand extends Command {
 
       // apply and set contextual transform
       if (ctx.previous && ctx.previous.id != this.id) {
+        console.log(ctx.previous.id)
         mat4.multiply(this.transform, ctx.previous.transform, model)
         mat4.copy(model, this.transform)
       } else {
@@ -233,6 +234,9 @@ export class MeshCommand extends Command {
           },
           color() { return self.color ? self.color.elements : [0, 0, 0, 0]},
           model() { return model },
+          projection({projection} = {}) { return projection || mat4.identity([]) },
+          view({view} = {}) { return view || mat4.identity([]) },
+          aspect({aspect} = {}) { return aspect || 1 },
         }
 
         defaults.primitive = opts.primitive || 'triangles'
@@ -383,6 +387,8 @@ export class MeshCommand extends Command {
         block()
         opts.after && opts.after({...defaults, ...state}, block)
         ctx.pop()
+
+        return this
       })
     }
 
@@ -480,12 +486,12 @@ export class MeshCommand extends Command {
       get() {
         if (null == this.geometry) {
           return null
-        } else if (boundingBox) {
-          return boundingBox
+        } else if (null == boundingBox) {
+          boundingBox =
+            getBoundingBox(this.geometry.positions)
+            .map((p) => new Vector(...p))
         }
 
-        boundingBox =
-          getBoundingBox(this.geometry.positions).map((p) => new Vector(...p))
         return boundingBox
       }
     })

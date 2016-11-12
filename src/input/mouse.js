@@ -47,7 +47,7 @@ export class MouseCommand extends Command {
     })
 
     // focus/blur context on mouse down
-    events.on(document, 'mousedown', (e) => {
+    events.on(window.document, 'mousedown', (e) => {
       if (e.target == ctx.domElement) {
         ctx.focus()
       } else {

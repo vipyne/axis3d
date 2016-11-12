@@ -10,6 +10,13 @@ import glsl from 'glslify'
 // @TODO(werle) - consider using multi-regl
 import regl from 'regl'
 
+const computeCanvasDimensions = (domElement) => {
+  const style = getComputedStyle(domElement)
+  const width = parseFloat(style.width)
+  const height = parseFloat(style.height)
+  return Object.assign(domElement, {width, height})
+}
+
 /**
  * Module symbols.
  */
@@ -171,6 +178,28 @@ export class Context extends EventEmitter {
 
   get state() {
     return this[$stack]
+  }
+
+  /**
+   * Contest canvas width
+   *
+   * @getter
+   * @type {Number}
+   */
+
+  get width() {
+    return computeCanvasDimensions(this.domElement).width
+  }
+
+  /**
+   * Contest canvas height
+   *
+   * @getter
+   * @type {Number}
+   */
+
+  get height() {
+    return computeCanvasDimensions(this.domElement).height
   }
 
   /**

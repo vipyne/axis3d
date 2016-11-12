@@ -101,6 +101,9 @@ export class CameraCommand extends MeshCommand {
     const eye = new Vector(0, 0, 0)
     const up = new Vector(0, 0, 0)
 
+    const inverseProjectionView = mat4.identity([])
+    const projectionView = mat4.identity([])
+    const inverseView = mat4.identity([])
     const projection = mat4.identity([])
     const view = mat4.identity([])
 
@@ -184,21 +187,15 @@ export class CameraCommand extends MeshCommand {
       // set projection
       mat4.perspective(projection, fov, aspect, near, far)
 
-      // update transform from context if present
-      if (ctx.previous && ctx.previous.id != this.id) {
-        mat4.copy(this.transform, mat4.multiply([], ctx.previous.transform, view))
-      } else {
-        mat4.copy(this.transform, view)
-      }
-
-      // update view matrix
-      mat4.copy(view, this.transform)
       mat4.lookAt(view, position, target, up)
       mat4.multiply(view, view, mat4.fromQuat([], this.rotation))
 
+      mat4.multiply(projectionView, projection, view)
+      mat4.invert(inverseProjectionView, projectionView)
+      mat4.invert(inverseView, view)
+
       // set eye vector
-      mat4.invert(scratch, view)
-      vec3.set(eye, scratch[12], scratch[13], scratch[14])
+      vec3.set(eye, inverseView[12], inverseView[13], inverseView[14])
       return this
     }
 
@@ -208,10 +205,9 @@ export class CameraCommand extends MeshCommand {
       render(_, state, ...args) {
         if ('object' == typeof state) {
           update(state)
-          render(state, ...args)
-        } else if ('function' == typeof state) {
-          render(state)
         }
+
+        render(state, ...args)
       }
     })
 
@@ -319,6 +315,30 @@ export class CameraCommand extends MeshCommand {
      */
 
     define(this, 'orientation', { get: () => orientation })
+
+    /**
+     * Camera view projection value.
+     *
+     * @type {Number}
+     */
+
+    define(this, 'projectionView', { get: () => projectionView })
+
+    /**
+     * Camera inverse view projection value.
+     *
+     * @type {Number}
+     */
+
+    define(this, 'inverseProjectionView', { get: () => inverseProjectionView })
+
+    /**
+     * Camera inverse view value.
+     *
+     * @type {Number}
+     */
+
+    define(this, 'inverseView', { get: () => inverseView })
 
     /**
      * Looks at a target vector.
