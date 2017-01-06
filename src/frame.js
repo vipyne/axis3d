@@ -4,8 +4,13 @@
  * Module dependencies.
  */
 
-import { Command } from './command'
-import { define } from './utils'
+import {
+  Command
+} from './command'
+
+import {
+  define
+} from './utils'
 
 import {
   incrementStat,
@@ -20,7 +25,6 @@ export class FrameCommand extends Command {
     const {regl} = ctx
     const queue = []
 
-    const texture = regl.texture()
     let reglContext = null
     let isRunning = false
     let tick = null
@@ -28,6 +32,11 @@ export class FrameCommand extends Command {
     const injectContext = regl({
       context: {
         resolution: ({viewportWidth: w, viewportHeight: h}) => ([w, h]),
+        lights: [],
+      },
+
+      uniforms: {
+        time: ({time}) => time,
       }
     })
 
@@ -73,19 +82,14 @@ export class FrameCommand extends Command {
 
           try {
             injectContext((_) => {
-              // clear
               ctx.reset()
               ctx.clear()
-
-              // draw
               for (let refresh of queue) {
                 if ('function' == typeof refresh) {
                   refresh(reglContext, ...args)
                 }
               }
-
             })
-
           } catch (e) {
             ctx.emit('error', e)
             cancel()

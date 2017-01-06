@@ -14,6 +14,7 @@ import coalesce from 'defined'
 import glslify from 'glslify'
 import clamp from 'clamp'
 import mat4 from 'gl-mat4'
+import mat3 from 'gl-mat3'
 import vec4 from 'gl-vec4'
 import vec3 from 'gl-vec3'
 import vec2 from 'gl-vec2'
@@ -31,11 +32,6 @@ const kDefaultMeshWireframePrimitive = 'line strip'
 const kDefaultWireframeThickness = 0.0125
 const kDefaultMeshPrimitive = 'triangles'
 const kDefaultVertexShader = glslify(__dirname + '/glsl/mesh/vert.glsl')
-
-/**
- * MeshCommand constructor.
- * @see MeshCommand
- */
 
 module.exports = exports = (...args) => new MeshCommand(...args)
 export class MeshCommand extends Object3DCommand {
@@ -73,6 +69,9 @@ export class MeshCommand extends Object3DCommand {
     // shader unifors
     const uniforms = {
       model: ({transform}) => transform || identity,
+      modelNormal: ({transform}) => {
+        return mat3.normalFromMat4([], transform || identity)
+      },
 
       wireframeThickness: ({}, {
         wireframeThickness = initial.wireframeThickness
@@ -116,7 +115,7 @@ export class MeshCommand extends Object3DCommand {
 
       // helper function to set attribute that dynamically
       // selects wireframe complex or mesh complex
-      const attr = (name, macro, fallback = () => void 0) => {
+      const setAttribute = (name, macro, fallback = () => void 0) => {
         const pl = n => `${n}s`
         const w = geometry.wireframe
         const p = geometry.complex
@@ -136,11 +135,11 @@ export class MeshCommand extends Object3DCommand {
 
       // vertex attributes defined with macro #ifdef ... #endif
       // wrapper
-      attr('nextPosition', 'HAS_NEXT_POSITIONS')
-      attr('direction', 'HAS_DIRECTIONS')
-      attr('position', 'HAS_POSITIONS')
-      attr('normal', 'HAS_NORMALS')
-      attr('uv', 'HAS_UVS', ({wireframe = initial.wireframe} = {}) => {
+      setAttribute('nextPosition', 'HAS_NEXT_POSITIONS')
+      setAttribute('direction', 'HAS_DIRECTIONS')
+      setAttribute('position', 'HAS_POSITIONS')
+      setAttribute('normal', 'HAS_NORMALS')
+      setAttribute('uv', 'HAS_UVS', ({wireframe = initial.wireframe} = {}) => {
         if (wireframe && geometry.wireframe) {
           return geometry.wireframe.positions.map((p) => p.slice(0, 2))
         } else {
@@ -225,7 +224,7 @@ export class MeshCommand extends Object3DCommand {
 
       // Draws mesh and with given state and
       // then calling an optional given block
-      draw(state = {}, block = () => void 0) {
+      update(state, block) {
         const noop = () => void 0
 
         if ('function' == typeof state) {

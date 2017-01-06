@@ -32,43 +32,67 @@ export const DEFAULT_CAMERA_ORIENTATION_ORIGIN = Object.freeze(
 )
 
 export class CameraCommand extends Object3DCommand {
-  constructor(ctx, opts = {}) {
+  constructor(ctx, initialState = {}) {
     registerStat('Camera')
     const worldUp = new Vector(0, 1, 0)
-    const target = opts.target || new Vector(0, 0, 0)
+    const target = initialState.target || new Vector(0, 0, 0)
 
     const right = new Vector(0, 0, 0) // computed
     const front = new Vector(0, 0, 0) // computed
+    const eye = new Vector(0, 0, 0) // computed
     const up = new Vector(0, 0, 0) // computed
 
-    const eye = new Vector(0, 0, 0)
-
-    const orientation = Object.assign({}, DEFAULT_CAMERA_ORIENTATION_ORIGIN)
+    const orientation = [...DEFAULT_CAMERA_ORIENTATION_ORIGIN]
     const projection = mat4.identity([])
     const view = mat4.identity([])
 
-    let viewportHeight = coalesce(opts.viewportHeight, 1)
-    let viewportWidth = coalesce(opts.viewportWidth, 1)
-    let near = coalesce(opts.near, DEFAULT_CAMERA_NEAR)
-    let far = coalesce(opts.far, DEFAULT_CAMERA_FAR)
-    let fov = coalesce(opts.fov, opts.fieldOfView, DEFAULT_CAMERA_FIELD_OF_VIEW)
+    let viewportHeight = coalesce(initialState.viewportHeight, 1)
+    let viewportWidth = coalesce(initialState.viewportWidth, 1)
+    let near = coalesce(initialState.near, DEFAULT_CAMERA_NEAR)
+    let far = coalesce(initialState.far, DEFAULT_CAMERA_FAR)
+    let fov = coalesce(initialState.fov, initialState.fieldOfView, DEFAULT_CAMERA_FIELD_OF_VIEW)
 
     const context = {
       projection: () => projection,
       transform: () => mat4.identity([]),
       aspect: () => viewportWidth/viewportHeight,
       view: () => view,
-      fov: () => fov
+      fov: () => fov,
     }
 
     const uniforms = {
       projection: () => projection,
       aspect: () => viewportWidth/viewportHeight,
       view: () => view,
+      eye: () => [...eye],
     }
 
-    const injectContext = ctx.regl({ context, uniforms })
-    const update = (state) => {
+    const injectContext = ctx.regl({
+      context,
+      uniforms
+    })
+
+    super(ctx, {
+      ...initialState,
+      transform: false,
+      update(state, block) {
+        let needsUpdate = false
+        if ('function' == typeof state) {
+          block = state
+          state = {}
+        } else if ('object' == typeof state) {
+          needsUpdate = true
+        }
+
+				if (needsUpdate) {
+          updateState(state)
+        }
+
+        injectContext(block)
+      }
+    })
+
+    function updateState(state) {
       state = state || {}
 
       if (ctx.reglContext) {
@@ -145,29 +169,7 @@ export class CameraCommand extends Object3DCommand {
 
       // compute eye vector from the inverse view matrix
       mat4.invert(scratch, view)
-      vec3.set(eye, eye[12], eye[13], eye[14])
+      vec3.set(eye, scratch[12], scratch[13], scratch[14])
     }
-
-    super(ctx, {
-      ...opts,
-      draw(state, block) {
-        let needsUpdate = false
-        if ('function' == typeof state) {
-          block = state
-          state = {}
-        } else if ('object' == typeof state) {
-          needsUpdate = true
-        }
-
-				if (needsUpdate) {
-          update(state)
-        }
-
-        injectContext(block)
-      }
-    })
-
-    // initial update
-    update({})
   }
 }

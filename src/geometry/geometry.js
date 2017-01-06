@@ -5,12 +5,14 @@
  */
 
 import Wireframe from 'screen-projected-lines'
+import reindex from 'mesh-reindex'
+import unindex from 'unindex-mesh'
 import normals from 'angle-normals'
 
 module.exports = exports = (...args) => new Geometry(...args)
 export class Geometry {
-  constructor({complex} = {}) {
-    this.complex = complex
+  constructor({complex} = {}, {flatten = true} = {}) {
+    this.complex = complex && flatten ? reindex(unindex(complex.positions, complex.cells)) : complex
     this.wireframe = complex && Wireframe(complex, {
       attributes: {
         normals: (complex.cells && complex.positions) && normals(
