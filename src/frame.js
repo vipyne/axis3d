@@ -24,6 +24,7 @@ export class FrameCommand extends Command {
     incrementStat('Frame')
     const {regl} = ctx
     const queue = []
+    const lights = []
 
     let reglContext = null
     let isRunning = false
@@ -32,7 +33,7 @@ export class FrameCommand extends Command {
     const injectContext = regl({
       context: {
         resolution: ({viewportWidth: w, viewportHeight: h}) => ([w, h]),
-        lights: [],
+        lights: () => lights
       },
 
       uniforms: {
@@ -84,6 +85,7 @@ export class FrameCommand extends Command {
             injectContext((_) => {
               ctx.reset()
               ctx.clear()
+              lights.splice(0, lights.length)
               for (let refresh of queue) {
                 if ('function' == typeof refresh) {
                   refresh(reglContext, ...args)

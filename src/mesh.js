@@ -240,18 +240,24 @@ export class MeshCommand extends Object3DCommand {
         const hook = (name) =>
           void (state[name] || initialState[name] || noop)({ ...state })
 
-        if (null == ctx.reglContext) {
-          block({ ...(ctx.reglContext || {}) })
-        } else {
-          if (false != state.draw) {
-            hook('beforeDraw')
-            draw(state)
-            hook('afterDraw')
-            block({ ...ctx.reglContext })
+        const update = initialState.update || (({} = {}, f) => f())
+
+        update(state, () => {
+          if (null == ctx.reglContext) {
+            block({ ...(ctx.reglContext || {}) })
           } else {
-            draw(state, () => { block({ ...ctx.reglContext }) })
+            ctx.reglContext.geometry = geometry
+            if (false != state.draw) {
+              hook('beforeDraw')
+              draw(state)
+              hook('afterDraw')
+              block({ ...ctx.reglContext })
+            } else {
+              draw(state, block)
+            }
+            delete ctx.reglContext.geometry
           }
-        }
+        })
       }
     })
 

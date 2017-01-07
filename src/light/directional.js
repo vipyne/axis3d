@@ -17,6 +17,11 @@ export const kMaxDirectionalLights = 32
 export class DirectionalLightCommand extends LightCommand {
   constructor(ctx, initialState = {}) {
     incrementStat('DirectionalLight')
-    super(ctx, { ...initialState, type })
+    super(ctx, {
+      ...initialState,
+      intensity: 8,
+      radius: 80,
+      type,
+    })
   }
 }

@@ -56,18 +56,39 @@ export class Object3DCommand extends Command {
       scale: [...scale],
     }
 
-    // world
     const transform = mat4.identity([])
     const local = mat4.identity([])
 
     // regl context
     const injectContext = ctx.regl({
       context: {
-        transform: () => false !== opts.transform ? transform : undefined,
+        id: () => id,
+        scale: () => scale,
         position: () => position,
         rotation: () => rotation,
-        scale: () => scale,
-        id: () => id,
+        transform: ({transform: parentTransform}, state = {}, fo) => {
+          const wantsTransform = false !== opts.transform
+
+          if (!wantsTransform) {
+            return undefined
+          }
+
+          updateState(state || {})
+
+          // M = T * R * S
+          mat4.translate(local, local, position)
+          mat4.multiply(local, local, mat4.fromQuat([], rotation))
+          mat4.scale(local, local, scale)
+
+          // M' = Mp * M
+          if (parentTransform) {
+            mat4.multiply(transform, parentTransform, local)
+          } else {
+            mat4.copy(transform, local)
+          }
+
+          return transform
+        },
       }
     })
 
@@ -104,24 +125,6 @@ export class Object3DCommand extends Command {
           Object.assign(rotation, state.rotation)
         }
       }
-
-      //
-      //   M = T * R * S
-      //   M' = Mp * M
-      //
-
-      // M
-      mat4.translate(local, local, position)
-      mat4.multiply(local, local, mat4.fromQuat([], rotation))
-      mat4.scale(local, local, scale)
-
-      // M'
-      const {transform: parentTransform} = ctx.reglContext
-      if (parentTransform) {
-        mat4.multiply(transform, parentTransform, local)
-      } else {
-        mat4.copy(transform, local)
-      }
     }
 
     // calls current target render function
@@ -134,23 +137,11 @@ export class Object3DCommand extends Command {
       state = state || {}
       block = block || function() {}
 
-      // push this command to context stack
-      updateState({ ...state })
-
+      updateState(state)
       // inject context suitable for
       // all Object3DCommand instances
-      injectContext(() => {
-        // update object however defined by the
-        // extending class calling block as a scoped
-        // function
-        update({
-          ...state,
-          transform,
-          position,
-          rotation,
-          scale,
-        }, block)
-
+      injectContext(state, () => {
+        update({ ...state }, block)
       })
     })
 

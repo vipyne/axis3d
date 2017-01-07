@@ -17,6 +17,10 @@ export const kMaxAmbientLights = 16
 export class AmbientLightCommand extends LightCommand {
   constructor(ctx, initialState = {}) {
     incrementStat('AmbientLight')
-    super(ctx, { ...initialState, type })
+    super(ctx, {
+      ...initialState,
+      ambient: 0.01,
+      type,
+    })
   }
 }

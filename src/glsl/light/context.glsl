@@ -1,5 +1,6 @@
 #pragma glslify: DirectionalLight = require('./DirectionalLight')
 #pragma glslify: AmbientLight = require('./AmbientLight')
+#pragma glslify: PointLight = require('./PointLight')
 
 // Exports
 #pragma glslify: export(DirectionalLightsContext)
@@ -20,7 +21,13 @@ struct DirectionalLightsContext {
   DirectionalLight lights[MAX_AMBIENT_LIGHTS];
 };
 
+struct PointLightsContext {
+  int count;
+  PointLight lights[MAX_AMBIENT_LIGHTS];
+};
+
 struct LightContext {
   AmbientLightsContext ambient;
   DirectionalLightsContext directional;
+  PointLightsContext point;
 };

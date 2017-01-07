@@ -1,6 +1,7 @@
 'use strict'
 
 import injectDefines from 'glsl-inject-defines'
+import coalesce from 'defined'
 import glslify from 'glslify'
 import vec4 from 'gl-vec4'
 
@@ -27,36 +28,37 @@ export class MaterialCommand extends Command {
     incrementStat('Material')
 
     let {
-      transparent = false,
+      transparent: initialTransparent = false,
       blending = {},
-      opacity = 1.0,
+      opacity: initialOpacity = 1.0,
       culling = {},
       shader = kDefaultFragmentShader,
-      color = [100/255, 110/255, 255/255, 1],
+      color: initialColor = [100/255, 110/255, 255/255, 1],
       depth = {},
       type = types.Material,
-      map = null
+      map: initialMap = new TextureCommand(ctx)
     } = initialState
 
     const {regl} = ctx
 
-    const initialMap = map || new TextureCommand(ctx)
-    const initialColor = color
-    const initialOpacity = opacity
-
     const initialBlending = {
       equation: 'add',
-      enable: (
-        ('boolean' == typeof blending && blending) ||
-        ('boolean' == typeof transparent && transparent)
-      ),
+      enable: true,
       color: [0, 0, 0, 1],
       func: {src: 'src alpha', dst: 'one minus src alpha'},
       ...blending,
     }
 
+    if ('boolean' == typeof blending)  {
+      initialBlending.enable = blending
+    }
+
+    if ('boolean' == typeof initialTransparent) {
+      initialBlending.enable = initialTransparent
+    }
+
     const initialCulling = {
-      enable: false,
+      enable: true,
       face: 'back',
       ...culling
     }
@@ -72,7 +74,9 @@ export class MaterialCommand extends Command {
 
     const uniforms = {
       'material.opacity': ({}, {opacity = initialOpacity} = {}) => opacity,
-      'material.color': ({}, {color = initialColor} = {}) => color,
+      'material.color': ({}, {color = initialColor} = {}) => {
+        return color
+      },
       'material.type': () => type || types.Material,
 
       'map.resolution': ({textureResolution}) => textureResolution || [0, 0],
@@ -97,14 +101,42 @@ export class MaterialCommand extends Command {
       shader = `#define ${key} ${shaderDefines[key]}\n`+shader
     }
 
+    const injectMapContext = regl({
+      context: {
+        map: ({}, {map = initialMap} = {}) => map
+      }
+    })
+
     const injectContext = regl({
       uniforms,
       frag: shader,
       blend: {
         equation: () => blending.equation,
-        enable: ({}, {transparent = blending.enable} = {}) => transparent,
+        enable: ({}, {
+          transparent = coalesce(initialTransparent, blending.enable),
+          blending: blend = blending.enable,
+          opacity = initialOpacity,
+        } = {}) => {
+          if (opacity < 1.0 || transparent) {
+            return true
+          } else if ('boolean' == typeof blend) {
+            return blend
+          } else {
+            return transparent
+          }
+        },
+
         color: () => blending.color,
-        func: () => blending.func,
+        func: ({}, {
+          transparent = initialTransparent,
+            opacity = initialOpacity
+        } = {}) => {
+          if (opacity < 1.0 || transparent) {
+            return {src: 'src alpha', dst: 'one'}
+          } else {
+            return blending.func
+          }
+        },
       },
 
       cull: {
@@ -115,18 +147,21 @@ export class MaterialCommand extends Command {
       depth: {
         enable: () => depth.enable,
         range: () => depth.range,
-        mask: () => depth.mask,
         func: () => depth.func,
+        mask: ({}, {opacity = opacity, transparent} = {}) => {
+          if (opacity < 1.0 || transparent) {
+            return false
+          } else {
+            return depth.mask
+          }
+        },
       },
     })
 
     // configurable
     blending = { ...initialBlending }
     culling = { ...initialCulling }
-    opacity = initialOpacity
     depth = { ...initialDepth }
-    color = [ ...initialColor ]
-    map = initialMap
 
     super((state, block) => {
       const noop = () => void 0
@@ -136,60 +171,19 @@ export class MaterialCommand extends Command {
         state = {}
       }
 
-      state = state || {}
+      if (Array.isArray(state)) {
+        state = [ ...state ]
+      } else {
+        state = { ...(state || {}) }
+      }
+
       block = block || noop
 
-      blending = { ...initialBlending }
-      culling = { ...initialCulling }
-      depth = { ...initialDepth }
-      color = [ ...initialColor ]
-      map = initialMap
-
-      if ('blending' in state) {
-        if (true === state.blending) {
-          blending.enable = true
-        } else if (false === state.blending) {
-          blending.enable = false
-        } else {
-          Object.assign(blending, state.blending)
-        }
-      }
-
-      if ('culling' in state) {
-        if (true === state.culling) {
-          culling.enable = true
-        } else if (false === state.culling) {
-          culling.enable = false
-        } else {
-          Object.assign(culling, state.culling)
-        }
-      }
-
-      if ('depth' in state) {
-        if (true === state.depth) {
-          depth.enable = true
-        } else if (false === state.depth) {
-          depth.enable = false
-        } else {
-          Object.assign(depth, state.depth)
-        }
-      }
-
-      if ('color' in state) {
-        vec4.copy(color, state.color)
-      }
-
-      if ('map' in state) {
-        map = state.map
-      }
-
-      if ('function' == typeof map) {
-        map(({textureResolution}) => {
+      injectMapContext(state, ({map}) => {
+        map(() => {
           injectContext(state, block)
         })
-      } else {
-        injectContext(state, block)
-      }
+      })
     })
   }
 }

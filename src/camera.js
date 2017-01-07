@@ -46,8 +46,6 @@ export class CameraCommand extends Object3DCommand {
     const projection = mat4.identity([])
     const view = mat4.identity([])
 
-    let viewportHeight = coalesce(initialState.viewportHeight, 1)
-    let viewportWidth = coalesce(initialState.viewportWidth, 1)
     let near = coalesce(initialState.near, DEFAULT_CAMERA_NEAR)
     let far = coalesce(initialState.far, DEFAULT_CAMERA_FAR)
     let fov = coalesce(initialState.fov, initialState.fieldOfView, DEFAULT_CAMERA_FIELD_OF_VIEW)
@@ -55,16 +53,17 @@ export class CameraCommand extends Object3DCommand {
     const context = {
       projection: () => projection,
       transform: () => mat4.identity([]),
-      aspect: () => viewportWidth/viewportHeight,
+      aspect: ({viewportWidth, viewportHeight}) => viewportWidth/viewportHeight,
       view: () => view,
       fov: () => fov,
     }
 
     const uniforms = {
       projection: () => projection,
-      aspect: () => viewportWidth/viewportHeight,
-      view: () => view,
+      aspect: ({viewportWidth, viewportHeight}) => viewportWidth/viewportHeight,
+      view: computeViewMatrix,
       eye: () => [...eye],
+
     }
 
     const injectContext = ctx.regl({
@@ -76,29 +75,18 @@ export class CameraCommand extends Object3DCommand {
       ...initialState,
       transform: false,
       update(state, block) {
-        let needsUpdate = false
-        if ('function' == typeof state) {
-          block = state
-          state = {}
-        } else if ('object' == typeof state) {
-          needsUpdate = true
-        }
-
-				if (needsUpdate) {
-          updateState(state)
-        }
-
-        injectContext(block)
+        injectContext(state, block)
       }
     })
 
-    function updateState(state) {
+    function computeViewMatrix({
+      viewportWidth,
+      viewportHeight,
+      position,
+      rotation,
+      scale
+    }, state) {
       state = state || {}
-
-      if (ctx.reglContext) {
-        viewportHeight = coalesce(ctx.reglContext.viewportHeight, 1)
-        viewportWidth = coalesce(ctx.reglContext.viewportWidth, 1)
-      }
 
       if ('fov' in state) {
         fov = state.fov
@@ -110,14 +98,6 @@ export class CameraCommand extends Object3DCommand {
 
       if ('near' in state) {
         near = state.near
-      }
-
-      if ('viewportWidth' in state) {
-        viewportWidth = state.viewportWidth
-      }
-
-      if ('viewportHeight' in state) {
-        viewportHeight = state.viewportHeight
       }
 
       if ('orientation' in state) {
@@ -133,11 +113,6 @@ export class CameraCommand extends Object3DCommand {
       }
 
       const aspect = viewportWidth/viewportHeight
-      const {
-        position,
-        rotation,
-        scale,
-      } = state
 
       if (!position || !rotation || !scale) { return }
 
@@ -170,6 +145,8 @@ export class CameraCommand extends Object3DCommand {
       // compute eye vector from the inverse view matrix
       mat4.invert(scratch, view)
       vec3.set(eye, scratch[12], scratch[13], scratch[14])
+
+      return view
     }
   }
 }

@@ -10,6 +10,14 @@ import {
   Object3DCommand
 } from '../object3d'
 
+import {
+  MeshCommand
+} from '../mesh'
+
+import {
+  FlatMaterialCommand
+} from '../material/flat'
+
 let LIGHT_COMMAND_COUNTER = 0
 
 module.exports = exports = (...args) => new LightCommand(...args)
@@ -23,44 +31,16 @@ export class LightCommand extends Object3DCommand {
     const {
       intensity: initialIntensity = 10,
       position: initialPosition = [0, 0, 0],
-      ambient: initialAmbient = 0.01,
+      ambient: initialAmbient = 0.1,
       visible: initialVisible = true,
-      radius: initialRadius = 60,
+      radius: initialRadius = 50,
       color: initialColor = [1, 1, 1, 1],
       type: initialType = types[0],
     } = initialState
 
-    const context = {
-      [`lights[${id}]`]({ position }, {
-        intensity,
-        ambient,
-        visible,
-        radius,
-        color,
-        type,
-      } = {}) {
-        const typeName =
-          Object.keys(types).find((k) => (type || initialType) == types[k])
-        let w = 0
-        if ((type || initialType) == types.DirectionalLight) {
-          w = 1
-        }
-        return {
-          intensity: intensity || initialIntensity,
-          position: [...(position || initialPosition), w],
-          ambient: ambient || initialAmbient,
-          visible: visible || initialVisible,
-          radius: radius || initialRadius,
-          color: color || initialColor,
-          type: type || initialType,
-          typeName,
-        }
-      }
-    }
-
-    const injectContext = regl({
-      context
-    })
+    const context = {}
+    const material = new FlatMaterialCommand(ctx)
+    const injectContext = regl({ context })
 
     super(ctx, {
       ...initialState,
@@ -73,10 +53,51 @@ export class LightCommand extends Object3DCommand {
           state = {}
         }
 
+        const {position} = ctx.reglContext
+        const {
+          intensity,
+          ambient,
+          visible,
+          radius,
+          color,
+          type,
+        } = state
+
+        const typeName =
+          Object.keys(types).find((k) => (type || initialType) == types[k])
+
+        let w = 0
+        if ((type || initialType) == types.DirectionalLight) {
+          w = 1
+        } else if ((type || initialType) == types.PointLight) {
+          w = 0
+        }
+
+        const light = {
+          intensity: intensity || initialIntensity,
+          position: [...(position || initialPosition), w],
+          ambient: ambient || initialAmbient,
+          visible: visible || initialVisible,
+          radius: radius || initialRadius,
+          color: color || initialColor,
+          type: type || initialType,
+          typeName,
+        }
+
         state = state || {}
         block = block || noop
+        state = {}
+        ctx.reglContext.lights.push(light)
 
-        injectContext(state, block)
+        const update = initialState.update || (({} = {}, f) => f())
+
+        material(state, () => {
+          injectContext(state, (...args) => {
+            update(state, () => {
+              block(...args)
+            })
+          })
+        })
       }
     })
   }

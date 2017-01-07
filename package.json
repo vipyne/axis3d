@@ -78,6 +78,7 @@
     "browserify": "^13.1.0",
     "budo": "^9.0.0",
     "bunny": "^1.0.1",
+    "color-shader-functions": "^0.0.2",
     "esdoc-es7-plugin": "0.0.3",
     "glslify": "^6.0.0",
     "glslify-babel": "^1.0.1",
