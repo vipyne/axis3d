@@ -66,11 +66,15 @@ export class MeshCommand extends Object3DCommand {
       count: initialState.count || undefined
     }
 
-    // shader unifors
+    // shader uniforms
     const uniforms = {
       model: ({transform}) => transform || identity,
-      modelNormal: ({transform}) => {
-        return mat3.normalFromMat4([], transform || identity)
+      modelNormal: ({transform}, {} = {}, id) => {
+        return (
+          transform ?
+          mat3.normalFromMat4([], transform ) :
+          identity
+        )
       },
 
       wireframeThickness: ({}, {
@@ -83,7 +87,11 @@ export class MeshCommand extends Object3DCommand {
         wireframe = initial.wireframe
       } = {}) => {
         return Boolean(wireframe)
-      }
+      },
+
+      // at least enough for flat shading incase a material isn't given
+      'material.opacity': ({materialOpacity}, {opacity = materialOpacity} = {}) => opacity,
+      'material.color': ({materialColor}, {color = materialColor} = {}) => color,
     }
 
     // regl context
@@ -238,7 +246,7 @@ export class MeshCommand extends Object3DCommand {
         // helper function to call hook defined on
         // input state falling back to initial state
         const hook = (name) =>
-          void (state[name] || initialState[name] || noop)({ ...state })
+          void (state[name] || initialState[name] || noop)(state)
 
         const update = initialState.update || (({} = {}, f) => f())
 
@@ -247,11 +255,13 @@ export class MeshCommand extends Object3DCommand {
             block({ ...(ctx.reglContext || {}) })
           } else {
             ctx.reglContext.geometry = geometry
-            if (false != state.draw) {
+            if (false === state.visible) {
+              draw(state, block)
+            } else if (false != state.draw) {
               hook('beforeDraw')
               draw(state)
               hook('afterDraw')
-              block({ ...ctx.reglContext })
+              block({ ...ctx.reglContext }, state)
             } else {
               draw(state, block)
             }

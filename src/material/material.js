@@ -74,7 +74,7 @@ export class MaterialCommand extends Command {
 
     const uniforms = {
       'material.opacity': ({}, {opacity = initialOpacity} = {}) => opacity,
-      'material.color': ({}, {color = initialColor} = {}) => {
+      'material.color': ({}, {color = initialColor} = {}, id) => {
         return color
       },
       'material.type': () => type || types.Material,
@@ -103,7 +103,8 @@ export class MaterialCommand extends Command {
 
     const injectMapContext = regl({
       context: {
-        map: ({}, {map = initialMap} = {}) => map
+        map: ({}, {map = initialMap} = {}) => map,
+
       }
     })
 
@@ -156,6 +157,15 @@ export class MaterialCommand extends Command {
           }
         },
       },
+
+      context: {
+        materialOpacity: ({}, {opacity = initialOpacity} = {}) => opacity,
+        materialColor: ({color: materialColor}, {color = materialColor || initialColor} = {}, id) =>  color,
+        materialType: () => type || types.Material,
+
+        mapResolution: ({textureResolution}) => textureResolution || [0, 0],
+        mapData: ({texture}, {map = initialMap} = {}) => texture || map,
+      }
     })
 
     // configurable
@@ -179,7 +189,8 @@ export class MaterialCommand extends Command {
 
       block = block || noop
 
-      injectMapContext(state, ({map}) => {
+      const mapState = Array.isArray(state) ? {} : state.map
+      injectMapContext(mapState, ({map}) => {
         map(() => {
           injectContext(state, block)
         })

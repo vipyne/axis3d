@@ -1,6 +1,7 @@
 'use strict'
 
 import * as types from './types'
+import coalesce from 'defined'
 
 import {
   incrementStat
@@ -55,12 +56,12 @@ export class LightCommand extends Object3DCommand {
 
         const {position} = ctx.reglContext
         const {
-          intensity,
-          ambient,
-          visible,
-          radius,
-          color,
-          type,
+          intensity = initialIntensity,
+          ambient = initialAmbient,
+          visible = initialVisible,
+          radius = initialRadius,
+          color = initialColor,
+          type = initialType,
         } = state
 
         const typeName =
@@ -73,27 +74,27 @@ export class LightCommand extends Object3DCommand {
           w = 0
         }
 
-        const light = {
-          intensity: intensity || initialIntensity,
-          position: [...(position || initialPosition), w],
-          ambient: ambient || initialAmbient,
-          visible: visible || initialVisible,
-          radius: radius || initialRadius,
-          color: color || initialColor,
-          type: type || initialType,
-          typeName,
-        }
+        const light = {}
+        light.intensity = coalesce(intensity, initialIntensity)
+        light.position = coalesce([...(position || initialPosition), w])
+        light.ambient = coalesce(ambient, initialAmbient)
+        light.visible = coalesce(visible, initialVisible)
+        light.radius = coalesce(radius, initialRadius)
+        light.color = coalesce(color, initialColor)
+        light.type = coalesce(type, initialType)
+        light.typeName
 
         state = state || {}
         block = block || noop
-        state = {}
+
+        // push to scoped lights in context
         ctx.reglContext.lights.push(light)
 
         const update = initialState.update || (({} = {}, f) => f())
 
-        material(state, () => {
-          injectContext(state, (...args) => {
-            update(state, () => {
+        material(state, ({}, args = {}) => {
+          injectContext(args, ({}, args = {}) => {
+            update(args, (...args) => {
               block(...args)
             })
           })

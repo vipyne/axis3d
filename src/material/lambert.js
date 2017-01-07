@@ -29,7 +29,7 @@ export class LambertMaterialCommand extends MaterialCommand {
     let {
       roughness: initialRoughness = 0.8,
       emissive: initialEmissive = [0, 0, 0, 1],
-      ambient: initialAmbient = [0.2, 0.2, 0.2, 1],
+      ambient: initialAmbient = [0.5, 0.5, 0.5, 1],
       albedo: initialAlbedo = 0.6,
     } = initialState
 

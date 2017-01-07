@@ -38,23 +38,19 @@ export class Object3DCommand extends Command {
     return OBJECT_COMMAND_COUNTER ++
   }
 
-  constructor(ctx, opts = {}) {
+  constructor(ctx, initialState = {}) {
     incrementStat('Object3D')
-    const update = opts.update || function () {}
-    const type = opts.type || 'object'
-    const id = opts.id || Object3DCommand.id()
 
-    // 3d
-    const rotation = new Quaternion(...(opts.rotation || []))
-    const position = new Vector(...(opts.position || [0, 0, 0]))
-    const scale = new Vector(...(opts.scale || [1, 1, 1]))
+    const {
+      transform: wantsTransform = true,
+      update = function () {},
+      type = 'object',
+      id = Object3DCommand.id(),
 
-    // initial state
-    const initial = {
-      rotation: [...rotation],
-      position: [...position],
-      scale: [...scale],
-    }
+      rotation: initialRotation = [0, 0, 0, 1],
+      position: initialPosition = [0, 0, 0],
+      scale: initialScale = [1, 1, 1],
+    } = initialState
 
     const transform = mat4.identity([])
     const local = mat4.identity([])
@@ -63,17 +59,31 @@ export class Object3DCommand extends Command {
     const injectContext = ctx.regl({
       context: {
         id: () => id,
-        scale: () => scale,
-        position: () => position,
-        rotation: () => rotation,
-        transform: ({transform: parentTransform}, state = {}, fo) => {
-          const wantsTransform = false !== opts.transform
-
+        scale: ({}, {scale = initialScale} = {}) => scale,
+        position: ({}, {position = initialPosition} = {}) => position,
+        rotation: ({}, {rotation = initialRotation} = {}) => rotation,
+        transform: ({transform: parentTransform}, args = {}, batchId) => {
+          //console.log(transform, parentTransform)
           if (!wantsTransform) {
             return undefined
           }
 
-          updateState(state || {})
+          const {
+            scale = initialScale,
+            position = initialPosition,
+            rotation = initialRotation,
+              foo = false,
+          } = args
+
+          // create copy in case for nested cycles
+          if (parentTransform) {
+            parentTransform = [ ...parentTransform ]
+          } else {
+            parentTransform = mat4.identity([])
+          }
+
+          mat4.identity(local)
+          mat4.identity(transform)
 
           // M = T * R * S
           mat4.translate(local, local, position)
@@ -81,51 +91,12 @@ export class Object3DCommand extends Command {
           mat4.scale(local, local, scale)
 
           // M' = Mp * M
-          if (parentTransform) {
-            mat4.multiply(transform, parentTransform, local)
-          } else {
-            mat4.copy(transform, local)
-          }
+          mat4.multiply(transform, parentTransform, local)
 
           return transform
         },
       }
     })
-
-    //
-    // Updates state and internal matrices.
-    //
-    const updateState = (state = {}) => {
-      mat4.identity(local)
-      mat4.identity(transform)
-      vec3.copy(scale, initial.scale)
-      vec3.copy(position, initial.position)
-      quat.copy(rotation, initial.rotation)
-
-      if (state.scale) {
-        if (state.scale.length && 3 == state.scale.length) {
-          vec3.copy(scale, state.scale)
-        } else {
-          Object.assign(scale, state.scale)
-        }
-      }
-
-      if (state.position) {
-        if (state.position.length && 3 == state.position.length) {
-          vec3.copy(position, state.position)
-        } else {
-          Object.assign(position, state.position)
-        }
-      }
-
-      if (state.rotation) {
-        if (state.rotation.length && 4 == state.rotation.length) {
-          quat.copy(rotation, state.rotation)
-        } else {
-          Object.assign(rotation, state.rotation)
-        }
-      }
-    }
 
     // calls current target render function
     super((state = {}, block = () => void 0) => {
@@ -137,11 +108,10 @@ export class Object3DCommand extends Command {
       state = state || {}
       block = block || function() {}
 
-      updateState(state)
       // inject context suitable for
       // all Object3DCommand instances
-      injectContext(state, () => {
-        update({ ...state }, block)
+      injectContext(state, ({}, args = {}) => {
+        update(args, block)
       })
     })
 
