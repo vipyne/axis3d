@@ -98,9 +98,9 @@ export class MeshCommand extends Object3DCommand {
     const context = {
       ...reglOptions.context,
 
-      get boundingBox() { return () => computeBoundingBox() },
-      get geometry() { return geometry || null },
-      get size() { return () => computeSize() },
+      boundingBox: computeBoundingBox,
+      geometry: () => geometry || null,
+      size: computeSize,
     }
 
     Object.assign(reglOptions, {context})
@@ -292,7 +292,7 @@ export class MeshCommand extends Object3DCommand {
     // Function to compute the size of the geometry with
     // respect to scaling and dimension
     //
-    function computeSize() {
+    function computeSize({scale} = {}, {} = {}) {
       if (null == geometry) {
         return null
       }
@@ -300,7 +300,6 @@ export class MeshCommand extends Object3DCommand {
       computeBoundingBox()
 
       const dimension = boundingBox[0].length
-      const {scale} = ctx.reglContext // scale is injected by `Object3DCommand`
       const min = boundingBox[0]
       const max = boundingBox[1]
       let size = null

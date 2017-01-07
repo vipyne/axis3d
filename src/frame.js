@@ -18,6 +18,11 @@ import {
   resetStat
 } from './stats'
 
+import glslify from 'glslify'
+
+const kDefaultFragmentShader =
+  glslify(__dirname + '/glsl/material/fragments/main.glsl')
+
 module.exports = exports = (...args) => new FrameCommand(...args)
 export class FrameCommand extends Command {
   constructor(ctx, opts = {}) {
@@ -31,6 +36,7 @@ export class FrameCommand extends Command {
     let tick = null
 
     const injectContext = regl({
+      frag: kDefaultFragmentShader,
       context: {
         resolution: ({viewportWidth: w, viewportHeight: h}) => ([w, h]),
         lights: () => lights
@@ -38,6 +44,25 @@ export class FrameCommand extends Command {
 
       uniforms: {
         time: ({time}) => time,
+      },
+
+      blend: {
+        equation: 'add',
+        enable: true,
+        color: [0, 0, 0, 1],
+        func: {src: 'src alpha', dst: 'one minus src alpha'},
+      },
+
+      cull: {
+        enable: true,
+        face: 'back',
+      },
+
+      depth: {
+        enable: true,
+        range: [0, 1],
+        mask: true,
+        func: 'less',
       }
     })
 

@@ -33,7 +33,10 @@ uniform MATERIAL_TYPE material;
 uniform LightContext lightContext;
 uniform mat4 model;
 uniform vec3 eye;
+
+#ifdef HAS_MAP
 uniform Map map;
+#endif
 
 //
 // Shader entry.

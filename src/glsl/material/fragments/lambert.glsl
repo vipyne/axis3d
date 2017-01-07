@@ -113,6 +113,16 @@ void applyPositionedLight(
 void main() {
   GeometryContext geometry = getGeometryContext();
   vec4 fragColor = vec4(0.0);
+  vec4 surfaceColor = vec4(0.0);
+
+#ifdef HAS_MAP
+  if (map.resolution.x > 0.0 && map.resolution.y > 0.0) {
+    surfaceColor = texture2D(map.data, 1.0 - geometry.uv);
+  } else
+#endif
+  {
+    surfaceColor = material.color;
+  }
 
   // accumulate ambient
   for (int i = 0; i < MAX_AMBIENT_LIGHTS; ++i) {
@@ -122,7 +132,7 @@ void main() {
 
     AmbientLight light = lightContext.ambient.lights[i];
     if (light.visible) {
-      fragColor += material.color * light.color * material.ambient;
+      fragColor += surfaceColor * light.color * material.ambient;
     }
   }
 

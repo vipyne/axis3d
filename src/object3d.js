@@ -52,6 +52,7 @@ export class Object3DCommand extends Command {
       scale: initialScale = [1, 1, 1],
     } = initialState
 
+    let didJustComputeTransfromFromInitialState = false
     const transform = mat4.identity([])
     const local = mat4.identity([])
 
@@ -63,7 +64,6 @@ export class Object3DCommand extends Command {
         position: ({}, {position = initialPosition} = {}) => position,
         rotation: ({}, {rotation = initialRotation} = {}) => rotation,
         transform: ({transform: parentTransform}, args = {}, batchId) => {
-          //console.log(transform, parentTransform)
           if (!wantsTransform) {
             return undefined
           }
@@ -72,7 +72,6 @@ export class Object3DCommand extends Command {
             scale = initialScale,
             position = initialPosition,
             rotation = initialRotation,
-              foo = false,
           } = args
 
           // create copy in case for nested cycles
@@ -82,6 +81,13 @@ export class Object3DCommand extends Command {
             parentTransform = mat4.identity([])
           }
 
+          if (scale == initialScale &&
+              position == initialPosition &&
+              rotation == initialRotation &&
+              didJustComputeTransfromFromInitialState) {
+            return mat4.multiply(transform, parentTransform, local)
+          }
+
           mat4.identity(local)
           mat4.identity(transform)
 
@@ -89,6 +95,14 @@ export class Object3DCommand extends Command {
           mat4.translate(local, local, position)
           mat4.multiply(local, local, mat4.fromQuat([], rotation))
           mat4.scale(local, local, scale)
+
+          if (scale == initialScale &&
+              position == initialPosition &&
+              rotation == initialRotation) {
+            didJustComputeTransfromFromInitialState = true
+          } else {
+            didJustComputeTransfromFromInitialState = false
+          }
 
           // M' = Mp * M
           mat4.multiply(transform, parentTransform, local)

@@ -36,7 +36,7 @@ export class MaterialCommand extends Command {
       color: initialColor = [100/255, 110/255, 255/255, 1],
       depth = {},
       type = types.Material,
-      map: initialMap = new TextureCommand(ctx)
+      map: initialMap = null
     } = initialState
 
     const {regl} = ctx
@@ -72,15 +72,31 @@ export class MaterialCommand extends Command {
       ...depth,
     }
 
+    // configurable
+    blending = { ...initialBlending }
+    culling = { ...initialCulling }
+    depth = { ...initialDepth }
+
+    const emptyTexture = regl.texture()
     const uniforms = {
       'material.opacity': ({}, {opacity = initialOpacity} = {}) => opacity,
-      'material.color': ({}, {color = initialColor} = {}, id) => {
-        return color
-      },
+      'material.color': ({}, {color = initialColor} = {}) => color,
       'material.type': () => type || types.Material,
 
-      'map.resolution': ({textureResolution}) => textureResolution || [0, 0],
-      'map.data': ({texture}, {map = initialMap} = {}) => texture || map,
+      'map.resolution': ({textureResolution, textureData}) => {
+        if (textureData) {
+          return textureResolution || [0, 0]
+        } else {
+          return [0, 0]
+        }
+      },
+      'map.data': ({texture, textureData}) => {
+        if (textureData) {
+          return texture
+        } else {
+          return emptyTexture
+        }
+      },
 
       ...initialState.uniforms
     }
@@ -91,6 +107,10 @@ export class MaterialCommand extends Command {
       MATERIAL_TYPE: typeName, // `LambertMaterial', etc
 
       ...initialState.shaderDefines
+    }
+
+    if (null != initialMap) {
+      shaderDefines.HAS_MAP = 1
     }
 
     for (let key in types) {
@@ -104,7 +124,6 @@ export class MaterialCommand extends Command {
     const injectMapContext = regl({
       context: {
         map: ({}, {map = initialMap} = {}) => map,
-
       }
     })
 
@@ -160,18 +179,20 @@ export class MaterialCommand extends Command {
 
       context: {
         materialOpacity: ({}, {opacity = initialOpacity} = {}) => opacity,
-        materialColor: ({color: materialColor}, {color = materialColor || initialColor} = {}, id) =>  color,
         materialType: () => type || types.Material,
+        materialColor: ({
+          color: materialColor
+        }, {
+          color = materialColor || initialColor
+        } = {}) => {
+          return color
+        },
 
         mapResolution: ({textureResolution}) => textureResolution || [0, 0],
         mapData: ({texture}, {map = initialMap} = {}) => texture || map,
       }
     })
 
-    // configurable
-    blending = { ...initialBlending }
-    culling = { ...initialCulling }
-    depth = { ...initialDepth }
 
     super((state, block) => {
       const noop = () => void 0
