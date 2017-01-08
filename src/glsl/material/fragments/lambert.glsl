@@ -12,8 +12,6 @@ precision mediump float;
 #pragma glslify: inverse = require('glsl-inverse')
 #pragma glslify: orenn = require('glsl-diffuse-oren-nayar')
 
-#pragma glslify: lambert = require('glsl-diffuse-lambert')
-
 #ifndef MAX_AMBIENT_LIGHTS
 #define MAX_AMBIENT_LIGHTS 16
 #endif
@@ -65,6 +63,7 @@ PositionedLightUnpackPoint(PointLight light) {
 void applyPositionedLight(
     PositionedLight light,
     GeometryContext geometry,
+    in vec3 surfaceColor,
     inout vec4 fragColor) {
   if (false == light.visible) {
     return;
@@ -93,8 +92,7 @@ void applyPositionedLight(
     (diffuse < 0.0 || 0.0 < diffuse || diffuse == 0.0)
     ? diffuse : 0.0;
 
-  //float diffuseCoef = max(0.0, dot(geometry.normal, direction));
-  vec3 combined = diffuse * material.color.xyz;
+  vec3 combined = diffuse * surfaceColor;
 
   // sum
   fragColor += vec4(
@@ -106,9 +104,6 @@ void applyPositionedLight(
       , 1.0);
 }
 
-//
-// Shader entry.
-//
 #pragma glslify: export(main)
 void main() {
   GeometryContext geometry = getGeometryContext();
@@ -146,6 +141,7 @@ void main() {
     applyPositionedLight(
       PositionedLightUnpackDirectional(light),
       geometry,
+      surfaceColor.xyz,
       fragColor);
   }
 
@@ -158,6 +154,7 @@ void main() {
     applyPositionedLight(
       PositionedLightUnpackPoint(light),
       geometry,
+      surfaceColor.xyz,
       fragColor);
   }
 

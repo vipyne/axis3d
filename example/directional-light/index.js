@@ -7,15 +7,15 @@ import {
   DirectionalLight,
   LambertMaterial,
 
-  BoxGeometry,
-
   OrientationInput,
   TouchInput,
   MouseInput,
 
+  BoxGeometry,
   Context,
   Camera,
   Frame,
+  Lines,
   Mesh,
 } from 'axis3d'
 
@@ -107,6 +107,7 @@ const box = (() => {
   const geometry = BoxGeometry()
   const material = LambertMaterial(ctx)
   const mesh = Mesh(ctx, {geometry})
+  const lines = Lines(ctx, {geometry})
   return (state = {}, block) => {
     mesh(state, ({}, args) => {
       material({
@@ -114,10 +115,9 @@ const box = (() => {
         color: [1, 1, 1, 1.0],
         opacity: coalesce(state.opacity, 1)
       }, () => {
-        mesh({
+        lines({
           visible: coalesce(state.segments, true),
-          wireframe: true,
-          wireframeThickness: 0.05,
+          thickness: 0.05,
           scale: [1.00125, 1.00125, 1.00125]
         })
       })

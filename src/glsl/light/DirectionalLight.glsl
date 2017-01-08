@@ -1,6 +1,5 @@
 #pragma glslify: export(DirectionalLight)
 struct DirectionalLight {
-  vec4 direction;
   vec4 position;
   vec4 color;
   bool visible;

@@ -9,6 +9,7 @@ export Texture from './texture'
 export Context from './context'
 export Camera from './camera'
 export Frame from './frame'
+export Lines from './lines'
 export Mesh from './mesh'
 
 export * from './material'
@@ -16,5 +17,3 @@ export * from './geometry'
 export * from './light'
 export * from './input'
 export * from './math'
-
-//export Geometry from './geometry'

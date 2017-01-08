@@ -1,25 +1,22 @@
 'use strict'
 
 import {
-  Material,
+  OrientationInput,
+  SphereGeometry,
+  FlatMaterial,
+  BoxGeometry,
+  TouchInput,
+  MouseInput,
   Context,
   Camera,
   Frame,
-  Mesh
+  Mesh,
 } from 'axis3d'
 
 import {
-  OrientationInput,
-  TouchInput,
-  MouseInput,
-} from 'axis3d/input'
+  OrbitCameraController
+} from '../../extras/controller'
 
-import {
-  SphereGeometry,
-  BoxGeometry,
-} from 'axis3d/geometry'
-
-import { OrbitCameraController } from '../../extras/controller'
 import quat from 'gl-quat'
 import vec3 from 'gl-vec3'
 import raf from 'raf'
@@ -28,10 +25,10 @@ const ctx = Context()
 const frame = Frame(ctx)
 
 const box = Mesh(ctx, { geometry: BoxGeometry() })
-const world = Mesh(ctx, { geometry: SphereGeometry({ radius: 20 }) })
+const world = Mesh(ctx, { geometry: SphereGeometry({ radius: 20, flatten: false }) })
 const sphere = Mesh(ctx, { geometry: SphereGeometry({ raidus: 1 }) })
 
-const material = Material(ctx)
+const material = FlatMaterial(ctx)
 const camera = Camera(ctx)
 
 // inputs
@@ -53,6 +50,7 @@ for (let i = 0; i < count; ++i) {
   positions.push(vec3.add([], offset, vec3.random([], i*i*i)))
 }
 
+let worldGeometryCellsLength = 0
 frame(({time}) => {
   orbitCamera({
     rotation: quat.multiply(
@@ -61,18 +59,23 @@ frame(({time}) => {
       quat.setAxisAngle([], [0, 0, 1], 0.125*time)
     ),
   }, () => {
-    let cellCount = 0
-    // ready world geometry to get cell count
-    world({draw: false}, ({geometry}) => {
-      cellCount = (600*time % geometry.wireframe.cells.length)|0
-    })
 
+    let cellCount = 0
+    // read world geometry to get cell count
+    if (0 == worldGeometryCellsLength) {
+      world({draw: false}, ({geometry}) => {
+        worldGeometryCellsLength = geometry.wireframe.cells.length
+      })
+    }
+
+    cellCount = (600*time % worldGeometryCellsLength)|0
     material({ color: [ 0.8, 0.8, 0.8, 0.8, ] }, () => {
       world({
-        wireframe: true,
+        //wireframe: true,
         count: cellCount,
         wireframeThickness: 0.1,
       }, () => {
+    return
         material({ }, () => {
           sphere({
             wireframe: true,
@@ -95,13 +98,9 @@ frame(({time}) => {
           rotation: quat.setAxisAngle([], [1, 0, 0], time),
           position: [-5, 0, 0]
         }, () => {
-          for (let i = 0 ; i < count; ++i) {
-            material({ color: [0.8, 1, 0.8, 1.0] }, () => {
-              sphere({
-                position: positions[i]
-              })
-            })
-          }
+          material({ color: [0.8, 1, 0.8, 1.0] }, () => {
+            sphere(positions.map((position) => ({position})))
+          })
         })
       })
     })

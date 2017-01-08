@@ -27,9 +27,8 @@ import {
 
 const identity = mat4.identity([])
 
-const kDefaultMeshComplexWireframePrimitive = 'triangles'
 const kDefaultMeshWireframePrimitive = 'line strip'
-const kDefaultWireframeThickness = 0.0125
+const kDefaultWireframeThickness = 1
 const kDefaultMeshPrimitive = 'triangles'
 const kDefaultVertexShader = glslify(__dirname + '/glsl/mesh/vert.glsl')
 
@@ -41,8 +40,8 @@ export class MeshCommand extends Object3DCommand {
     let {
       regl: reglOptions = {},
       vert: vertexShader = kDefaultVertexShader,
+      frag: fragmentShader = null,
 
-      attributes = {},
       primitive = 'triangles',
       geometry = null,
     } = initialState
@@ -66,27 +65,17 @@ export class MeshCommand extends Object3DCommand {
       count: initialState.count || undefined
     }
 
+    const attributes = {}
+
     // shader uniforms
     const uniforms = {
       model: ({transform}) => transform || identity,
       modelNormal: ({transform}, {} = {}, id) => {
         return (
           transform ?
-          mat3.normalFromMat4([], transform ) :
+          mat3.normalFromMat4([], transform) :
           identity
         )
-      },
-
-      wireframeThickness: ({}, {
-        wireframeThickness = initial.wireframeThickness
-      } = {}) => {
-        return wireframeThickness
-      },
-
-      wireframe: ({}, {
-        wireframe = initial.wireframe
-      } = {}) => {
-        return Boolean(wireframe)
       },
 
       // at least enough for flat shading incase a material isn't given
@@ -99,7 +88,7 @@ export class MeshCommand extends Object3DCommand {
       ...reglOptions.context,
 
       boundingBox: computeBoundingBox,
-      geometry: () => geometry || null,
+      geometry: geometry || null,
       size: computeSize,
     }
 
@@ -108,52 +97,32 @@ export class MeshCommand extends Object3DCommand {
     // configure vertex shader if a geometry with a
     // simpicial complex is given
     if (geometry) {
-      if (!(geometry instanceof Geometry)) {
-        // coerce to usable geometry
-        geometry = new Geometry({complex: geometry})
-      }
-
+      Object.assign(attributes, initialState.attributes)
+      Object.assign(uniforms, initialState.uniforms)
       Object.assign(reglOptions, {
         attributes,
         uniforms,
       })
 
       // shader defines injected into vertex shader
-      const shaderDefines = {}
-
-      // helper function to set attribute that dynamically
-      // selects wireframe complex or mesh complex
-      const setAttribute = (name, macro, fallback = () => void 0) => {
-        const pl = n => `${n}s`
-        const w = geometry.wireframe
-        const p = geometry.complex
-        const maybe = (a) => a && a.length ? a : null
-        if (maybe(w[pl(name)]) || maybe(p[pl(name)])) {
-          shaderDefines[macro] = ''
-          attributes[name] = ({}, args = {}) => {
-            const {wireframe = initial.wireframe} = args
-            if (wireframe) {
-              return maybe(w[pl(name)]) || maybe(fallback(args)) || maybe(p[pl(name)]) || null
-            } else {
-              return maybe(p[pl(name)]) || maybe(fallback(args)) || maybe(w[pl(name)]) || null
-            }
-          }
-        }
+      const shaderDefines = {
+        ...initialState.shaderDefines
       }
 
-      // vertex attributes defined with macro #ifdef ... #endif
-      // wrapper
-      setAttribute('nextPosition', 'HAS_NEXT_POSITIONS')
-      setAttribute('direction', 'HAS_DIRECTIONS')
-      setAttribute('position', 'HAS_POSITIONS')
-      setAttribute('normal', 'HAS_NORMALS')
-      setAttribute('uv', 'HAS_UVS', ({wireframe = initial.wireframe} = {}) => {
-        if (wireframe && geometry.wireframe) {
-          return geometry.wireframe.positions.map((p) => p.slice(0, 2))
-        } else {
-          return geometry.complex.positions.map((p) => p.slice(0, 2))
-        }
-      })
+      if (geometry.positions) {
+        attributes.position = geometry.positions
+        shaderDefines['HAS_POSITIONS'] = 1
+      }
+
+      if (geometry.normals) {
+        attributes.normal = geometry.normals
+        shaderDefines['HAS_NORMALS'] = 1
+      }
+
+      if (geometry.uvs) {
+        attributes.uv = geometry.uvs
+        shaderDefines['HAS_UVS'] = 1
+      }
 
       Object.assign(reglOptions, {
         primitive: geometry && (({}, {
@@ -163,11 +132,7 @@ export class MeshCommand extends Object3DCommand {
           if (inputPrimitive) {
             return inputPrimitive
           } else if (wireframe) {
-            if (geometry.wireframe && geometry.wireframe.positions.length) {
-              return kDefaultMeshComplexWireframePrimitive
-            } else {
-              return kDefaultMeshWireframePrimitive
-            }
+            return kDefaultMeshWireframePrimitive
           } else if ('string' == typeof primitive) {
             return primitive
           } else {
@@ -176,25 +141,18 @@ export class MeshCommand extends Object3DCommand {
         })
       })
 
-      if (geometry.complex.cells) {
+      if (geometry.cells) {
         Object.assign(reglOptions, {
           elements: ({}, {
             wireframe = initial.wireframe,
             count = initial.count,
           } = {}) => {
-            let cells = null
-            if (wireframe && geometry.wireframe && geometry.wireframe.cells) {
-              cells = geometry.wireframe.cells
-            } else if (geometry && geometry.complex.cells) {
-              cells = geometry.complex.cells
-            }
-
-            if (cells) {
+            let cells = geometry.cells
+            if (cells && 'number' == typeof count) {
               count = coalesce(count, cells.length)
               count = clamp(Math.floor(count), 0, cells.length)
               cells = cells.slice(0, count)
             }
-
             return cells
           }
         })
@@ -204,7 +162,7 @@ export class MeshCommand extends Object3DCommand {
             if (null != count) { return count }
             else if (initialState.count) { return initialState.count }
             else if (geometry && geometry.complex) {
-              return geometry.complex.positions.length
+              return geometry.positions.length
             } else {
               return null
             }
@@ -212,8 +170,12 @@ export class MeshCommand extends Object3DCommand {
         })
       }
 
-      if (vertexShader) {
+      if ('string' == typeof vertexShader) {
         reglOptions.vert = injectDefines(vertexShader, shaderDefines)
+      }
+
+      if ('string' == typeof fragmentShader) {
+        reglOptions.frag = injectDefines(fragmentShader, shaderDefines)
       }
 
       for (let key in reglOptions) {
@@ -223,7 +185,15 @@ export class MeshCommand extends Object3DCommand {
       }
 
       if (geometry) {
-        draw = ctx.regl(reglOptions)
+        draw = ctx.regl({
+          lineWidth: ({}, {
+            wireframeThickness = initial.wireframeThickness,
+            lineWidth = 1,
+          } = {}) => {
+            return Math.max(wireframeThickness || lineWidth, 1)
+          },
+          ...reglOptions
+        })
       }
     }
 
@@ -273,19 +243,19 @@ export class MeshCommand extends Object3DCommand {
 
     //
     // Function to compute the bounding box of the internal
-    // geometry. The original simpicial complex is used, not
-    // the wireframe complex. The bounding box is computed once
-    // and cached.
+    // geometry. The bounding box is computed once and cached.
     //
-    function computeBoundingBox() {
-      if (geometry && null == boundingBox) {
-        boundingBox = (
-          getBoundingBox(geometry.positions)
-          .map((p) => new Vector(...p))
-        )
-      }
+    function computeBoundingBox({}, {} = {}) {
+      return () => {
+        if (geometry && null == boundingBox) {
+          boundingBox = (
+            getBoundingBox(geometry.positions)
+            .map((p) => new Vector(...p))
+          )
+        }
 
-      return boundingBox
+        return boundingBox
+      }
     }
 
     //
@@ -293,26 +263,28 @@ export class MeshCommand extends Object3DCommand {
     // respect to scaling and dimension
     //
     function computeSize({scale} = {}, {} = {}) {
-      if (null == geometry) {
-        return null
-      }
+      return () => {
+        if (null == geometry) {
+          return null
+        }
 
-      computeBoundingBox()
+        computeBoundingBox()
 
-      const dimension = boundingBox[0].length
-      const min = boundingBox[0]
-      const max = boundingBox[1]
-      let size = null
+        const dimension = boundingBox[0].length
+        const min = boundingBox[0]
+        const max = boundingBox[1]
+        let size = null
 
-      switch (dimension) {
-        case 3: size = vec3.subtract(new Vector(0, 0, 0), max, min); break
-        case 2: size = vec2.subtract(new Vector(0, 0), max, min); break
-        default: return null
-      }
+        switch (dimension) {
+          case 3: size = vec3.subtract([], max, min); break
+          case 2: size = vec2.subtract([], max, min); break
+          default: return null
+        }
 
-      switch (dimension) {
-        case 3: return vec3.multiply(size, size, scale)
-        case 2: return vec2.multiply(size, size, scale)
+        switch (dimension) {
+          case 3: return vec3.multiply(size, size, scale)
+          case 2: return vec2.multiply(size, size, scale)
+        }
       }
     }
   }

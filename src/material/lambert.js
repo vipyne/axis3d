@@ -134,11 +134,16 @@ export class LambertMaterialCommand extends MaterialCommand {
               const filteredLights = lights
               .filter(Boolean)
               .filter((l) => l.type == type)
+              let value = null
               if (filteredLights[i]) {
-                return coalesce(filteredLights[i][property], args[property], fallback)
+                value = coalesce(
+                  filteredLights[i][property],
+                  args[property],
+                  fallback)
               } else {
-                return fallback
+                value = fallback
               }
+              return value
             }
           })
         }

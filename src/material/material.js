@@ -212,9 +212,13 @@ export class MaterialCommand extends Command {
 
       const mapState = Array.isArray(state) ? {} : state.map
       injectMapContext(mapState, ({map}) => {
-        map(() => {
+        if ('function' == typeof map) {
+          map(() => {
+            injectContext(state, block)
+          })
+        } else {
           injectContext(state, block)
-        })
+        }
       })
     })
   }

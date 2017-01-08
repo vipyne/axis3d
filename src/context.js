@@ -39,7 +39,6 @@ export class Context extends EventEmitter {
       ...(opts.regl),
       attributes: {
         ...(opts.regl.attributes || {}),
-        premultipliedAlpha: true,
       },
       extensions: [
         ...(opts.regl.extensions || []),

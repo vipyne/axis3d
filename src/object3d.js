@@ -64,7 +64,7 @@ export class Object3DCommand extends Command {
         position: ({}, {position = initialPosition} = {}) => position,
         rotation: ({}, {rotation = initialRotation} = {}) => rotation,
         transform: ({transform: parentTransform}, args = {}, batchId) => {
-          if (!wantsTransform) {
+          if (false === wantsTransform) {
             return undefined
           }
 

@@ -11,6 +11,7 @@ import {
 
   SphereGeometry,
   BoxGeometry,
+  Geometry,
 
   OrientationInput,
   TouchInput,
@@ -20,6 +21,7 @@ import {
   Camera,
   Frame,
   Mesh,
+  Lines,
 } from 'axis3d'
 
 import ControlPanel from 'control-panel'
@@ -53,24 +55,26 @@ const orbitCamera = OrbitCameraController(ctx, {
 
 const bunny = (() => {
   const material = LambertMaterial(ctx)
-  const mesh = Mesh(ctx, {geometry: Bunny})
+  const mesh = Mesh(ctx, {geometry: new Geometry({complex: Bunny, flatten: true})})
+  const lines = Lines(ctx, {
+    geometry: Bunny,
+    thickness: 0.05,
+    scale: [1.00125, 1.00125, 1.00125]
+  })
   return (state = {}, block) => {
-    mesh(state, ({}, args) => {
-      material({
-        blending: true,
-        color: [1, 1, 1, 1.0],
-        opacity: coalesce(state.opacity, 1)
-      }, () => {
-        if (true !== state.wireframe) {
-          mesh({
-            visible: coalesce(state.segments, true),
-            wireframe: true,
-            wireframeThickness: 0.05,
-            scale: [1.00125, 1.00125, 1.00125]
-          })
-        }
+    if (true == state.wireframe) {
+      lines({...state, wireframe: false})
+    } else {
+      mesh(state, ({}, args) => {
+        material({
+          blending: true,
+          color: [1, 1, 1, 1.0],
+          opacity: coalesce(state.opacity, 1)
+        }, () => {
+          lines({visible: coalesce(state.segments || state.wireframe, true)})
+        })
       })
-    })
+    }
   }
 })()
 
@@ -182,12 +186,14 @@ const panel = ControlPanel([
   Object.assign(lightXColor, rgb('Light X') || [])
   Object.assign(lightYColor, rgb('Light Y') || [])
   Object.assign(lightZColor, rgb('Light Z') || [])
+
   lightXVisible = Boolean(coalesce(e['Show Light X?'], lightXVisible))
   lightYVisible = Boolean(coalesce(e['Show Light Y?'], lightYVisible))
   lightZVisible = Boolean(coalesce(e['Show Light Z?'], lightZVisible))
 
   Object.assign(materialEmissive, rgb('Emissive') || [])
   Object.assign(materialColor, rgb('Color') || [])
+
   materialLineSegments = Boolean(coalesce(e['Lines'], materialLineSegments))
   materialWireframe = Boolean(coalesce(e['Wireframe'], materialWireframe))
   materialOpacity = Number(coalesce(e['Opacity'], materialOpacity))

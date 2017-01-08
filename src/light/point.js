@@ -32,9 +32,9 @@ export class PointLightCommand extends LightCommand {
 
     super(ctx, {
       ...initialState,
-      intensity: 0.8,
-      ambient: 0.007,
-      radius: 0.1,
+      intensity: 0.5,
+      ambient: 0.005,
+      radius: 0.01,
       type,
 
       update(state, block) {

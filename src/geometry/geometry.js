@@ -11,27 +11,17 @@ import normals from 'angle-normals'
 
 module.exports = exports = (...args) => new Geometry(...args)
 export class Geometry {
-  constructor({complex} = {}, {flatten = true} = {}) {
+  constructor({complex = null, flatten = false} = {}) {
     if (complex instanceof Geometry) {
       complex = complex.complex
     }
 
     if (complex) {
       if (flatten && complex.cells) {
-        // This is wrapped in a `try/catch' to allow execution
-        // to continue when a `reindex/unindex' fails due to an
-        // attempt to reindex an already reindexed complex
-        try {
-          const cells = complex.cells.map((cell) => cell.slice())
-          const flattened = reindex(unindex(complex.positions, cells))
-          complex.normals = normals(flattened.cells, flattened.positions)
-          if (complex.uvs) {
-            flattened.uvs = reindex(unindex(complex.uvs, cells)).positions
-          }
-          Object.assign(complex, flattened)
-        } catch (e) {
-          // @TODO(werle) - warning ?
-        }
+        const cells = complex.cells.map((cell) => cell.slice())
+        const flattened = reindex(unindex(complex.positions, cells))
+        complex.normals = normals(flattened.cells, flattened.positions)
+        Object.assign(complex, flattened)
       }
 
       if (null == complex.normals && complex.positions && complex.cells) {
@@ -40,15 +30,6 @@ export class Geometry {
     }
 
     this.complex = complex || null
-    this.wireframe = complex && Wireframe(complex, {
-      attributes: {
-        normals: complex.normals
-      }
-    })
-
-    if (this.wireframe) {
-      this.wireframe.normals = this.wireframe.attributes.normals
-    }
   }
 
   get positions() {

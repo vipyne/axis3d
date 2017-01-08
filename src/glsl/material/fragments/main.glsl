@@ -1,4 +1,4 @@
-precision highp float;
+precision mediump float;
 
 //
 // Shader dependencies.
@@ -31,7 +31,6 @@ varying vec2 vuv;
 //
 uniform MATERIAL_TYPE material;
 uniform LightContext lightContext;
-uniform mat4 model;
 uniform vec3 eye;
 
 #ifdef HAS_MAP
