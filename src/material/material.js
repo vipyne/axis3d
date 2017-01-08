@@ -58,7 +58,7 @@ export class MaterialCommand extends Command {
     }
 
     const initialCulling = {
-      enable: true,
+      enable: false,
       face: 'back',
       ...culling
     }

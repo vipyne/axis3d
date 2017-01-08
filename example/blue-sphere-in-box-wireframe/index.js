@@ -1,10 +1,13 @@
 'use strict'
 
-import { OrbitCameraController } from '../../extras/controller'
-import quat from 'gl-quat'
-
 import {
-  Material,
+  DirectionalLight,
+  OrientationInput,
+  LambertMaterial,
+  SphereGeometry,
+  BoxGeometry,
+  TouchInput,
+  MouseInput,
   Context,
   Camera,
   Frame,
@@ -12,15 +15,10 @@ import {
 } from 'axis3d'
 
 import {
-  SphereGeometry,
-  BoxGeometry,
-} from 'axis3d/geometry'
+  OrbitCameraController
+} from '../../extras/controller'
 
-import {
-  OrientationInput,
-  TouchInput,
-  MouseInput,
-} from 'axis3d/input'
+import quat from 'gl-quat'
 
 const ctx = Context()
 
@@ -38,13 +36,15 @@ const orbitCamera = OrbitCameraController(ctx, {
 })
 
 const BlueSphereInBoxWireframe = (ctx) => {
-  const material = Material(ctx)
+  const material = LambertMaterial(ctx)
   const sphere = Mesh(ctx, { geometry: SphereGeometry({radius: 1}) })
   const box = Mesh(ctx, { geometry: BoxGeometry() })
   return (state, block) => {
-    material({ color: [0.8, 0.8, 0.8, 1], ...state }, () => {
-      box({ ...state, wireframe: true }, () => {
-        material({ color: [0.2, 0.2, 0.8, 1] }, () => {
+    material({ color: [0.8, 0.8, 0.8, 1] }, () => {
+      state = Array.isArray(state) ? state : [state]
+      for (let s of state) { Object.assign(s, {wireframe: true}) }
+      box(state, ({}, args = {}) => {
+        material({ ...args, color: [0.2, 0.2, 0.8, 1] }, () => {
           sphere({ scale: [0.5, 0.5, 0.5] })
         })
       })
@@ -52,16 +52,19 @@ const BlueSphereInBoxWireframe = (ctx) => {
   }
 }
 
+const light = DirectionalLight(ctx)
 const draw = BlueSphereInBoxWireframe(ctx)
 
 frame(({time}) => {
   orbitCamera({ }, () => {
-    draw()
-    draw({position: [-2, 0, 0]})
-    draw({position: [2, 0, 0]})
-    draw({
-      position: [0, 2, Math.cos(time)],
-      color: [0.8, 0.6, Math.cos(0.5*time), 1]
-    })
+    light({position: [10, 20, 20]})
+    // batch
+    draw([
+      {position: [0, 0, 0]},
+      {position: [-2, 0, 0]},
+      {position: [2, 0, 0]},
+      {position: [0, 2, Math.cos(time)],
+       color: [0.8, 0.6, Math.cos(0.5*time), 1]}
+    ])
   })
 })

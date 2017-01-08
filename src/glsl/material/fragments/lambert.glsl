@@ -112,7 +112,7 @@ void main() {
 
 #ifdef HAS_MAP
   if (map.resolution.x > 0.0 && map.resolution.y > 0.0) {
-    surfaceColor = texture2D(map.data, 1.0 - geometry.uv);
+    surfaceColor = texture2D(map.data, 1.0 - geometry.uv).rgb;
   } else
 #endif
   {
