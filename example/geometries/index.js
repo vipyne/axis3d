@@ -13,6 +13,7 @@ import {
 
 import {
   TriangleGeometry,
+  CylinderGeometry,
   CapsuleGeometry,
   SphereGeometry,
   PlaneGeometry,
@@ -32,6 +33,7 @@ const frame = Frame(ctx)
 const angle = [0, 0, 0, 1]
 
 const triangle = Mesh(ctx, { geometry: TriangleGeometry() })
+const cylinder = Mesh(ctx, { geometry: CylinderGeometry() })
 const capsule = Mesh(ctx, { geometry: CapsuleGeometry() })
 const sphere = Mesh(ctx, { geometry: SphereGeometry() })
 const plane = Mesh(ctx, { geometry: PlaneGeometry({ segments: 16, size: 30 }) })
@@ -116,6 +118,8 @@ frame(({time}) => {
         wireframe: true,
         rotation: quat.setAxisAngle([], [1, 0, 0], 0.5*Math.PI)
       })
+
+      cylinder({position: [5, 3, 5]})
     })
 
     material({color: [0.125, 0.125, 0.75, 1], opacity: 1}, () => {
