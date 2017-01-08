@@ -19,7 +19,7 @@ export class DirectionalLightCommand extends LightCommand {
     incrementStat('DirectionalLight')
     super(ctx, {
       ...initialState,
-      intensity: 8,
+      intensity: 5,
       radius: 80,
       type,
     })

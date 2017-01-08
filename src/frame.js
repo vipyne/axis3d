@@ -21,7 +21,9 @@ import {
 import glslify from 'glslify'
 
 const kDefaultFragmentShader =
-  glslify(__dirname + '/glsl/material/fragments/main.glsl')
+  glslify(__dirname + '/glsl/material/fragments/main.glsl', {
+    transform: ['glslify-fancy-imports']
+  })
 
 module.exports = exports = (...args) => new FrameCommand(...args)
 export class FrameCommand extends Command {

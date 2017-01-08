@@ -10,14 +10,14 @@
 #pragma glslify: PointLight = require('../../light/PointLight')
 
 //utils
-#pragma glslify: computeAttenuation = require('../../light/attenuation')
 #pragma glslify: computeDirection = require('../../light/direction')
+#pragma glslify: phong = require('glsl-specular-blinn-phong')
 #pragma glslify: orenn = require('glsl-diffuse-oren-nayar')
 
 //
 // Material implementation header guard.
 //
-#ifdef useLambertMaterial
+#ifdef usePhongMaterial
 precision mediump float;
 
 #ifndef MAX_AMBIENT_LIGHTS
@@ -31,9 +31,6 @@ precision mediump float;
 #ifndef MAX_POINT_LIGHTS
 #define MAX_POINT_LIGHTS 128
 #endif
-
-#define isinf(n) (n >= 0.0 || n <= 0.0)
-#define isnan(n) !isinf(n) && n != n
 
 struct PositionedLight {
   vec4 position;
@@ -81,16 +78,10 @@ void applyPositionedLight(
   vec3 direction = computeDirection(light.position, geometry.position);
   vec3 ambient = light.ambient * material.ambient.xyz;
 
-  float attenuation =
-    computeAttenuation(
-        light.position,
-        direction,
-        light.radius);
-
   float diffuse =
     orenn(
         normalize(direction),
-        normalize(viewpoint),
+        viewpoint,
         geometry.normal,
         material.roughness,
         material.albedo);
@@ -100,14 +91,22 @@ void applyPositionedLight(
     (diffuse < 0.0 || 0.0 < diffuse || diffuse == 0.0)
     ? diffuse : 0.0;
 
-  vec3 combined = diffuse * light.color.xyz * light.intensity;
+  vec3 specular = vec3(0.0);
 
-  // sum
-  fragColor +=
-    ambient
-  + attenuation
-  * combined
-  * surfaceColor
+  if (material.shininess > 0.0) {
+    float power = phong(
+      normalize(direction),
+      viewpoint,
+      geometry.normal,
+      material.shininess);
+    if (power > 0.0 || power < 0.0) {
+      specular = material.specular.xyz * power;
+    }
+  }
+
+  vec3 combined = diffuse * surfaceColor * light.color.xyz * light.intensity;
+
+  fragColor += ambient + combined + specular;
   ;
 }
 
@@ -140,7 +139,6 @@ void main() {
     }
   }
 
-  // adapted from https://github.com/freeman-lab/gl-lambert-material/blob/master/fragment.glsl
   for (int i = 0; i < MAX_DIRECTIONAL_LIGHTS; ++i) {
     if (i >= lightContext.directional.count) {
       break;
@@ -168,9 +166,6 @@ void main() {
   }
 
   fragColor = fragColor + material.emissive.xyz;
-
-  //vec3 gamma = vec3(1.0/2.2);
-  //fragColor += vec4(pow(fragColor.xyz, gamma), 1.0);
 
   gl_FragColor = vec4(fragColor, material.opacity);
 }

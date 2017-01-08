@@ -1,6 +1,7 @@
 #pragma glslify: export(FlatMaterial)
 struct FlatMaterial {
-  float opacity;
   vec4 color;
+
+  float opacity;
   float type;
 };

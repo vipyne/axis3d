@@ -73,55 +73,60 @@ export class LambertMaterialCommand extends MaterialCommand {
         .filter((l) => l.type == PointLight).length
         return count
       },
+
+      ...initialState.uniforms
     }
 
-    const shaderDefines = { }
+    const shaderDefines = {
+      ...initialState.shaderDefines
+    }
 
-    setLightsInContext({
-      which: 'ambient',
-      type: lightTypes.AmbientLight,
-      max: kMaxAmbientLights,
-      defaults: {
-        color: [0, 0, 0, 0],
-        visible: false,
-      }
-    })
+    const lightContext = [{
+        which: 'ambient',
+        type: lightTypes.AmbientLight,
+        max: kMaxAmbientLights,
+        defaults: {
+          color: [0, 0, 0, 0],
+          visible: false,
+        }
+      }, {
+        which: 'directional',
+        type: lightTypes.DirectionalLight,
+        max: kMaxDirectionalLights,
+        defaults: {
+          position: [0, 0, 0, 0],
+          color: [0, 0, 0, 0],
+          visible: false,
+          radius: 0,
+          ambient: 0,
+          intensity: 0,
+        },
+      }, {
+        which: 'point',
+        type: lightTypes.PointLight,
+        max: kMaxPointLights,
+        defaults: {
+          position: [0, 0, 0, 0],
+          color: [0, 0, 0, 0],
+          visible: false,
+          radius: 0,
+          ambient: 0,
+          intensity: 0,
+        }
+      },
 
-    setLightsInContext({
-      which: 'directional',
-      type: lightTypes.DirectionalLight,
-      max: kMaxDirectionalLights,
-      defaults: {
-        direction: [0, 0, 0, 0],
-        position: [0, 0, 0, 0],
-        color: [0, 0, 0, 0],
-        visible: false,
-        radius: 0,
-        ambient: 0,
-        intensity: 0,
-      }
-    })
+      ...(initialState.lightContext || [])
+    ]
 
-    setLightsInContext({
-      which: 'point',
-      type: lightTypes.PointLight,
-      max: kMaxPointLights,
-      defaults: {
-        direction: [0, 0, 0, 0],
-        position: [0, 0, 0, 0],
-        color: [0, 0, 0, 0],
-        visible: false,
-        radius: 0,
-        ambient: 0,
-        intensity: 0,
-      }
-    })
+    for (let light of lightContext) {
+      setLightsInContext(light)
+    }
 
     super(ctx, {
       ...initialState,
       shaderDefines,
       uniforms,
-      type,
+      type: initialState.type || type,
     })
 
     function setLightsInContext({which, type, max, defaults}) {

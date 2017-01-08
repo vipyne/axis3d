@@ -20,7 +20,9 @@ import {
 } from '../command'
 
 const kDefaultFragmentShader =
-  glslify(__dirname + '/../glsl/material/fragments/main.glsl')
+  glslify(__dirname + '/../glsl/material/fragments/main.glsl', {
+    transform: ['glslify-fancy-imports']
+  })
 
 module.exports = exports = (...args) => new MaterialCommand(...args)
 export class MaterialCommand extends Command {
@@ -38,7 +40,6 @@ export class MaterialCommand extends Command {
       type = types.Material,
       map: initialMap = null
     } = initialState
-
     const {regl} = ctx
 
     const initialBlending = {

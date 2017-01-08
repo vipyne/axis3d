@@ -3,6 +3,12 @@ precision mediump float;
 //
 // Shader dependencies.
 //
+#pragma glslify: GeometryContext = require('../../geometry/context')
+
+//
+// Material implementation header guard.
+//
+#ifdef useFlatMaterial
 
 //
 // Shader entry.
@@ -25,3 +31,5 @@ void main() {
     gl_FragColor.a = material.opacity;
   }
 }
+
+#endif

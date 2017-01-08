@@ -5,17 +5,22 @@ precision mediump float;
 //
 #pragma glslify: GeometryContext = require('../../geometry/context')
 #pragma glslify: LightContext = require('../../light/context')
-#pragma glslify: Map = require('../Map')
 
-//
-// Built in material types.
-//
+// materials
 #pragma glslify: LambertMaterial = require('../LambertMaterial')
+#pragma glslify: PhongMaterial = require('../PhongMaterial')
 #pragma glslify: FlatMaterial = require('../FlatMaterial')
 
 #ifndef MATERIAL_TYPE
 #define MATERIAL_TYPE FlatMaterial
 #endif
+
+#ifndef useFlatMaterial
+#define useFlatMaterial 1
+#endif
+
+#define isinf(n) (n >= 0.0 || n <= 0.0)
+#define isnan(n) !isinf(n) && n != n
 
 #define getGeometryContext() GeometryContext(vposition, vnormal, vuv)
 
@@ -34,21 +39,59 @@ uniform LightContext lightContext;
 uniform vec3 eye;
 
 #ifdef HAS_MAP
+#pragma glslify: Map = require('../Map')
 uniform Map map;
 #endif
 
 //
-// Shader entry.
+// Lambertian shading model.
+//
+import drawLambertMaterial from './lambert' where {
+  getGeometryContext=getGeometryContext,
+  lightContext=lightContext,
+  material=material,
+  map=map,
+  eye=eye,
+  isnan=isnan,
+  isinf=isinf
+}
+
+//
+// Phong shading model.
+//
+import drawPhongMaterial from './phong' where {
+  getGeometryContext=getGeometryContext,
+  lightContext=lightContext,
+  material=material,
+  map=map,
+  eye=eye,
+  isnan=isnan,
+  isinf=isinf
+}
+
+//
+// Flat shading model.
+//
+import drawFlatMaterial from './flat' where {
+  getGeometryContext=getGeometryContext,
+  material=material,
+  map=map,
+}
+
+//
+// Shader entries.
 //
 #ifdef useLambertMaterial
-#pragma glslify: lambert = require('./lambert', material=material, lightContext=lightContext, eye=eye, map=map, getGeometryContext=getGeometryContext, GeometryContext=GeometryContext, model=model)
 void main() {
-  lambert();
+  drawLambertMaterial();
+}
+#elif defined usePhongMaterial
+void main() {
+  drawPhongMaterial();
 }
 #elif defined useFlatMaterial
-#pragma glslify: flat = require('./flat', material=material, lightContext=lightContext, eye=eye, map=map, getGeometryContext=getGeometryContext, GeometryContext=GeometryContext, model=model)
 void main() {
-  flat();
+  drawFlatMaterial();
 }
 #elif defined SHADER_MAIN_BODY
 void main() {
