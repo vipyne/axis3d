@@ -68,7 +68,6 @@ export class MaterialCommand extends Command {
       range: [0, 1],
       mask: true,
       func: 'less',
-      test: true,
       ...depth,
     }
 
@@ -131,7 +130,7 @@ export class MaterialCommand extends Command {
       uniforms,
       frag: shader,
       blend: {
-        equation: () => blending.equation,
+        equation: ({}, {opacity, transparent} = {}) =>  blending.equation,
         enable: ({}, {
           transparent = coalesce(initialTransparent, blending.enable),
           blending: blend = blending.enable,
@@ -170,7 +169,7 @@ export class MaterialCommand extends Command {
         func: () => depth.func,
         mask: ({}, {opacity = opacity, transparent} = {}) => {
           if (opacity < 1.0 || transparent) {
-            return false
+            return true
           } else {
             return depth.mask
           }
@@ -185,7 +184,7 @@ export class MaterialCommand extends Command {
         }, {
           color = materialColor || initialColor
         } = {}) => {
-          return color
+            return color
         },
 
         mapResolution: ({textureResolution}) => textureResolution || [0, 0],

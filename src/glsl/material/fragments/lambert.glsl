@@ -64,7 +64,7 @@ void applyPositionedLight(
     PositionedLight light,
     GeometryContext geometry,
     in vec3 surfaceColor,
-    inout vec4 fragColor) {
+    inout vec3 fragColor) {
   if (false == light.visible) {
     return;
   }
@@ -95,20 +95,20 @@ void applyPositionedLight(
   vec3 combined = diffuse * surfaceColor;
 
   // sum
-  fragColor += vec4(
-      ambient
-      + attenuation
-      * combined
-      * light.color.xyz
-      * light.intensity
-      , 1.0);
+  fragColor +=
+    ambient
+  + attenuation
+  * combined
+  * light.color.xyz
+  * light.intensity
+  ;
 }
 
 #pragma glslify: export(main)
 void main() {
   GeometryContext geometry = getGeometryContext();
-  vec4 fragColor = vec4(0.0);
-  vec4 surfaceColor = vec4(0.0);
+  vec3 fragColor = vec3(0.0);
+  vec3 surfaceColor = vec3(0.0);
 
 #ifdef HAS_MAP
   if (map.resolution.x > 0.0 && map.resolution.y > 0.0) {
@@ -116,7 +116,7 @@ void main() {
   } else
 #endif
   {
-    surfaceColor = material.color;
+    surfaceColor = material.color.xyz;
   }
 
   // accumulate ambient
@@ -127,7 +127,9 @@ void main() {
 
     AmbientLight light = lightContext.ambient.lights[i];
     if (light.visible) {
-      fragColor += surfaceColor * light.color * material.ambient;
+      fragColor += (
+        vec4(surfaceColor, material.opacity) * light.color * material.ambient
+      ).xyz;
     }
   }
 
@@ -154,15 +156,14 @@ void main() {
     applyPositionedLight(
       PositionedLightUnpackPoint(light),
       geometry,
-      surfaceColor.xyz,
+      surfaceColor,
       fragColor);
   }
 
-  fragColor = fragColor + material.emissive;
+  fragColor = fragColor + material.emissive.xyz;
 
   //vec3 gamma = vec3(1.0/2.2);
   //fragColor += vec4(pow(fragColor.xyz, gamma), 1.0);
 
-  gl_FragColor = fragColor;
-  gl_FragColor.a = material.opacity;
+  gl_FragColor = vec4(fragColor, material.opacity);
 }

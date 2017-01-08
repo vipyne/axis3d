@@ -117,7 +117,7 @@ const box = (() => {
       }, () => {
         lines({
           visible: coalesce(state.segments, true),
-          thickness: 0.05,
+          thickness: 0.0125,
           scale: [1.00125, 1.00125, 1.00125]
         })
       })

@@ -67,9 +67,8 @@ const bunny = (() => {
     } else {
       mesh(state, ({}, args) => {
         material({
-          blending: true,
           color: [1, 1, 1, 1.0],
-          opacity: coalesce(state.opacity, 1)
+          opacity: coalesce(state.opacity, 1),
         }, () => {
           lines({visible: coalesce(state.segments || state.wireframe, true)})
         })
