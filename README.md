@@ -16,7 +16,7 @@ information on how to install Axis3D into your project.
 # Example
 
 The following [hello world example](doc/hello-world.md) demonstrates rendering a
-blue triangle to the screen. A `canvas` is created with a `webgl` context and
+magenta cube to the screen. A `canvas` is created with a `webgl` context and
 automatically appended to the `body` DOM element.
 
 <table>
@@ -52,7 +52,7 @@ frame(({time}) => {
   quat.setAxisAngle(angle, [0, 1, 0], 0.5*time)
   quat.slerp(rotation, rotation, angle, 0.01)
   camera({rotation}, () => {
-    material({color: [0, 0, 1, 1]}, () => {
+    material({color: [1, 0, 1, 1]}, () => {
       box({wireframe: true})
     })
   })
